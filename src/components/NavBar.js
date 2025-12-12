@@ -1,6 +1,6 @@
 // src/components/NavBar.js
 import React from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 function NavBar() {
   return (
@@ -8,9 +8,23 @@ function NavBar() {
       <div className="navbar-logo">
         HP 2026 Quality Excellence Portal
       </div>
+
       <nav className="navbar-links">
-        <Link to="/">Home</Link>
-        <Link to="/criteria">QA Criteria</Link>
+        <NavLink to="/" end className="nav-link">
+          Home
+        </NavLink>
+
+        <NavLink to="/criteria" className="nav-link">
+          QA Criteria
+        </NavLink>
+
+        <NavLink to="/training-guide" className="nav-link">
+          Training Guide
+        </NavLink>
+
+        <NavLink to="/manager" className="nav-link">
+          Manager
+        </NavLink>
       </nav>
     </header>
   );

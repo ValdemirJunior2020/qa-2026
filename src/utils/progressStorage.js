@@ -16,10 +16,12 @@ export function loadProgress() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { completed: {} };
     const parsed = JSON.parse(raw);
+
     if (!parsed || typeof parsed !== "object") return { completed: {} };
     if (!parsed.completed || typeof parsed.completed !== "object") {
       return { completed: {} };
     }
+
     return parsed;
   } catch {
     return { completed: {} };
@@ -29,21 +31,40 @@ export function loadProgress() {
 export function saveProgress(progress) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
-    emitProgressUpdated(); // ✅ notify UI immediately
+    emitProgressUpdated();
   } catch {
-    // ignore write errors
+    // ignore
   }
 }
 
 export function markCriterionComplete(criterionId) {
   const progress = loadProgress();
   progress.completed[criterionId] = true;
-  saveProgress(progress); // emits event
+  saveProgress(progress);
   return progress;
 }
 
 export function resetProgress() {
-  saveProgress({ completed: {} }); // emits event
+  saveProgress({ completed: {} });
+}
+
+/** ✅ NEW: Export progress JSON (for AdminTools) */
+export function exportProgressJson() {
+  return JSON.stringify(loadProgress(), null, 2);
+}
+
+/** ✅ NEW: Import progress JSON (for AdminTools) */
+export function importProgressJson(jsonString) {
+  const parsed = JSON.parse(jsonString);
+
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("Invalid JSON");
+  }
+  if (!parsed.completed || typeof parsed.completed !== "object") {
+    throw new Error("Invalid progress format: missing 'completed'");
+  }
+
+  saveProgress({ completed: parsed.completed });
 }
 
 export { PROGRESS_EVENT };
