@@ -1,137 +1,184 @@
 // src/pages/DetailPage.js
-import React, { useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 
 import criteriaData from "../data/criteriaData";
-import expectationsData from "../data/expectationsData";
+import expectationsFallback from "../data/expectationsData";
+import { supabase } from "../supabaseClient";
+
 import Quiz from "../components/Quiz";
+
+function normalizeExpectation(rowOrFallback) {
+  // We store JSONB in Supabase; keep it consistent
+  const row = rowOrFallback || {};
+  const sectionsObj = row.sections || {};
+  const bullets = Array.isArray(sectionsObj.bullets) ? sectionsObj.bullets : [];
+
+  const approved = Array.isArray(row.approved_phrases) ? row.approved_phrases : [];
+  const misses = Array.isArray(row.common_misses) ? row.common_misses : [];
+  const examples = Array.isArray(row.examples) ? row.examples : [];
+
+  return {
+    id: row.id || "",
+    title: row.title || "",
+    bullets,
+    approved_phrases: approved,
+    common_misses: misses,
+    examples,
+  };
+}
 
 function DetailPage() {
   const { id } = useParams();
 
-  const criterion = useMemo(() => criteriaData.find((c) => c.id === id), [id]);
-  const expectation = expectationsData[id] || null;
+  const meta = useMemo(() => {
+    return criteriaData.find((c) => c.id === id) || null;
+  }, [id]);
 
-  if (!criterion) {
-    return (
-      <section className="page">
-        <h2>Criterion Not Found</h2>
-        <p className="muted">This criterion does not exist in your data file.</p>
-        <Link className="secondary-btn" to="/criteria">
-          Back to Criteria
-        </Link>
-      </section>
-    );
-  }
+  const fallback = useMemo(() => {
+    return expectationsFallback?.[id] || null;
+  }, [id]);
+
+  const [loading, setLoading] = useState(true);
+  const [exp, setExp] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { data, error: supaErr } = await supabase
+          .from("expectations")
+          .select("id,title,sections,approved_phrases,common_misses,examples")
+          .eq("id", id)
+          .single();
+
+        if (!alive) return;
+
+        if (supaErr) {
+          // If row not found or policy blocks, we still show fallback
+          setExp(null);
+          setError(supaErr.message || "Unable to load expectation from Supabase.");
+        } else {
+          setExp(data);
+        }
+      } catch (e) {
+        if (!alive) return;
+        setExp(null);
+        setError(e?.message || "Unexpected error loading expectation.");
+      } finally {
+        if (!alive) return;
+        setLoading(false);
+      }
+    }
+
+    if (id) load();
+
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+
+  const title = meta?.title || exp?.title || fallback?.title || id;
+
+  // Choose Supabase row if present, else fallback
+  const finalExp = useMemo(() => {
+    if (exp) return normalizeExpectation(exp);
+
+    if (fallback) {
+      // Your fallback file can be either:
+      // 1) { title, bullets, approved_phrases, common_misses, examples }
+      // 2) { title, sections:{bullets:[...]}, approved_phrases, common_misses, examples }
+      const shaped = {
+        id,
+        title: fallback.title || title,
+        sections: fallback.sections || { bullets: fallback.bullets || [] },
+        approved_phrases: fallback.approved_phrases || fallback.approvedPhrases || [],
+        common_misses: fallback.common_misses || fallback.commonMisses || [],
+        examples: fallback.examples || [],
+      };
+      return normalizeExpectation(shaped);
+    }
+
+    return normalizeExpectation({ id, title, sections: { bullets: [] } });
+  }, [exp, fallback, id, title]);
 
   return (
-    <section className="page">
-      <div className="page-header">
-        <div>
-          <h2>{criterion.title}</h2>
-          <p className="muted">{criterion.shortDescription}</p>
-
-          {Array.isArray(criterion.tags) && criterion.tags.length > 0 && (
-            <div className="tag-row tag-row-detail">
-              {criterion.tags.map((t) => (
-                <span key={t} className="tag-pill">
-                  {t}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <Link className="secondary-btn" to="/criteria">
-          ← Back to Criteria
+    <div className="page">
+      <div className="detail-wrap">
+        <Link to="/criteria" className="back-link">
+          ← Back to QA Criteria
         </Link>
-      </div>
 
-      <div className="detail-content">
-        <div className="detail-panel">
-          <h3>Expectation</h3>
+        <h1 className="detail-title">{title}</h1>
 
-          {!expectation ? (
-            <div className="muted">
-              Content coming soon for <strong>{criterion.id}</strong>. Add it in{" "}
-              <code>src/data/expectationsData.js</code>.
+        <p className="detail-subtitle">
+          This expectation is powered by Supabase (read-only for agents).
+        </p>
+
+        {loading && <p>Loading expectation…</p>}
+
+        {!loading && error && (
+          <div className="notice notice-warn">
+            ⚠️ Couldn’t load from Supabase. Showing fallback from code.
+            <div style={{ marginTop: 6, fontSize: 13, opacity: 0.9 }}>
+              {error}
             </div>
-          ) : (
-            <>
-              {expectation.sections?.map((sec, idx) => (
-                <div key={idx} className="expect-section">
-                  <h4 className="expect-heading">{sec.heading}</h4>
-                  {sec.text && <p className="muted">{sec.text}</p>}
-                  {Array.isArray(sec.bullets) && sec.bullets.length > 0 && (
-                    <ul className="expect-list">
-                      {sec.bullets.map((b, i) => (
-                        <li key={i}>{b}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
+          </div>
+        )}
 
-              {Array.isArray(expectation.approvedPhrases) && expectation.approvedPhrases.length > 0 && (
-                <div className="expect-section">
-                  <h4 className="expect-heading">Approved phrases</h4>
-                  <ul className="expect-list">
-                    {expectation.approvedPhrases.map((p, i) => (
-                      <li key={i}>
-                        <span className="phrase-pill">“{p}”</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+        {/* ✅ Expectation content */}
+        <div className="detail-card">
+          <h2 className="detail-section-title">✅ What “Good” Looks Like</h2>
 
-              {Array.isArray(expectation.commonMisses) && expectation.commonMisses.length > 0 && (
-                <div className="expect-section">
-                  <h4 className="expect-heading">Common misses</h4>
-                  <ul className="expect-list">
-                    {expectation.commonMisses.map((m, i) => (
-                      <li key={i}>{m}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+          <h3 className="detail-mini-title">What “Good” looks like</h3>
+          <ul>
+            {finalExp.bullets.map((b, idx) => (
+              <li key={idx}>{b}</li>
+            ))}
+          </ul>
 
-              {Array.isArray(expectation.examples) && expectation.examples.length > 0 && (
-                <div className="expect-section">
-                  <h4 className="expect-heading">Examples</h4>
-                  {expectation.examples.map((ex, i) => (
-                    <div key={i} className="example-box">
-                      <p>
-                        <strong>Scenario:</strong> {ex.scenario}
-                      </p>
-                      <p>
-                        <strong>Ideal response:</strong> {ex.ideal}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
+          <h3 className="detail-mini-title">Required elements</h3>
+          <ul>
+            {/* Keep it simple for now: show same bullets, or later you can add a `required` array in DB */}
+            {finalExp.bullets.map((b, idx) => (
+              <li key={idx}>{b}</li>
+            ))}
+          </ul>
 
-              {Array.isArray(expectation.sources) && expectation.sources.length > 0 && (
-                <div className="expect-section">
-                  <h4 className="expect-heading">Sources</h4>
-                  <ul className="expect-list muted">
-                    {expectation.sources.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </>
-          )}
+          <h2 className="detail-section-title">🟢 Approved Phrases</h2>
+          <ul>
+            {finalExp.approved_phrases.map((p, idx) => (
+              <li key={idx}>{p}</li>
+            ))}
+          </ul>
+
+          <h2 className="detail-section-title">🔴 Common Misses</h2>
+          <ul>
+            {finalExp.common_misses.map((m, idx) => (
+              <li key={idx}>{m}</li>
+            ))}
+          </ul>
+
+          <h2 className="detail-section-title">💡 Examples</h2>
+          <ul>
+            {finalExp.examples.map((ex, idx) => (
+              <li key={idx}>{ex}</li>
+            ))}
+          </ul>
         </div>
 
-        <div className="detail-panel">
-          <h3>Quiz</h3>
-          <Quiz criterionId={criterion.id} />
+        {/* ✅ QUIZ SECTION (this is what you’re missing) */}
+        <div className="detail-card" style={{ marginTop: 18 }}>
+          <h2 className="detail-section-title">🧠 Knowledge Check</h2>
+          <Quiz criterionId={id} />
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 

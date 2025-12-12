@@ -928,3 +928,39 @@
   border: 1px solid #c7d2fe;
   background: #eef2ff;
 }
+.auth-page {
+  display: flex;
+  justify-content: center;
+  padding-top: 2rem;
+}
+
+.auth-card {
+  width: min(520px, 92vw);
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1.2rem 1.2rem 1.1rem;
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.alert {
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  margin: 0.75rem 0;
+  border: 1px solid #e5e7eb;
+}
+
+.alert-warn {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.alert-ok {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
