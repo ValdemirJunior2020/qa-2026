@@ -4,126 +4,173 @@ import quizData from "../data/quizData";
 
 /**
  * Props:
- * - criterionId (string) required
- * - onPassed (optional function) called when user finishes quiz successfully
- *
- * Notes:
- * - Uses your existing src/data/quizData.js
- * - No progressStorage dependency (keeps it stable right now)
+ *  - criterionId: string (must match criteriaData IDs and quizData keys)
  */
-
-function Quiz({ criterionId, onPassed }) {
+function Quiz({ criterionId }) {
   const questions = useMemo(() => {
+    if (!criterionId) return [];
     return quizData?.[criterionId] || [];
   }, [criterionId]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState(null);
-  const [result, setResult] = useState(null); // "correct" | "wrong" | null
+  const [submitted, setSubmitted] = useState(false);
+  const [correctCount, setCorrectCount] = useState(0);
   const [finished, setFinished] = useState(false);
 
-  const currentQuestion = questions[currentIndex];
+  const current = questions[currentIndex] || null;
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (selectedIndex === null) return;
-
-    if (selectedIndex === currentQuestion.correctIndex) {
-      setResult("correct");
-    } else {
-      setResult("wrong");
-    }
-  };
-
-  const handleNext = () => {
-    setResult(null);
+  function resetQuiz() {
+    setCurrentIndex(0);
     setSelectedIndex(null);
+    setSubmitted(false);
+    setCorrectCount(0);
+    setFinished(false);
+  }
 
-    if (currentIndex + 1 < questions.length) {
-      setCurrentIndex((prev) => prev + 1);
+  function submitAnswer() {
+    if (selectedIndex === null || !current) return;
+
+    const isCorrect = selectedIndex === current.correctIndex;
+    setSubmitted(true);
+
+    if (isCorrect) setCorrectCount((c) => c + 1);
+  }
+
+  function nextQuestion() {
+    if (!questions.length) return;
+
+    const next = currentIndex + 1;
+
+    if (next >= questions.length) {
+      setFinished(true);
       return;
     }
 
-    setFinished(true);
-    if (typeof onPassed === "function") onPassed(criterionId);
-  };
+    setCurrentIndex(next);
+    setSelectedIndex(null);
+    setSubmitted(false);
+  }
 
-  // ✅ Keep hooks above, then render “coming soon”
-  if (!questions.length) {
+  if (!criterionId) {
     return (
-      <p className="quiz-empty">
-        Quiz questions for this criterion will be added in the next phase of the
-        2026 portal.
-      </p>
+      <div className="quiz">
+        <p>Quiz coming soon.</p>
+      </div>
     );
   }
 
-  if (!currentQuestion) {
+  if (!questions.length) {
     return (
-      <p className="quiz-empty">
-        Quiz is not available for this criterion yet.
-      </p>
+      <div className="quiz">
+        <p>Quiz coming soon for this criteria.</p>
+      </div>
+    );
+  }
+
+  if (finished) {
+    const total = questions.length;
+    const percent = Math.round((correctCount / total) * 100);
+
+    return (
+      <div className="quiz">
+        <h3 style={{ marginTop: 0 }}>✅ Quiz Complete</h3>
+        <p>
+          Score: <strong>{correctCount}</strong> / {total} ({percent}%)
+        </p>
+
+        <button type="button" onClick={resetQuiz}>
+          Retake Quiz
+        </button>
+      </div>
     );
   }
 
   return (
-    <div className="quiz-box">
-      {!finished ? (
-        <>
-          <p className="quiz-counter">
+    <div className="quiz">
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <div style={{ fontSize: 13, opacity: 0.75 }}>
             Question {currentIndex + 1} of {questions.length}
-          </p>
+          </div>
+          <h3 style={{ marginTop: 6 }}>{current.question}</h3>
+        </div>
 
-          <p className="quiz-question">{currentQuestion.question}</p>
+        <button type="button" onClick={resetQuiz} style={{ height: 36 }}>
+          Reset Quiz
+        </button>
+      </div>
 
-          <form onSubmit={handleSubmit}>
-            <div className="quiz-options">
-              {currentQuestion.options.map((opt, idx) => (
-                <label key={idx}>
-                  <input
-                    type="radio"
-                    name={currentQuestion.id}
-                    value={idx}
-                    checked={selectedIndex === idx}
-                    onChange={() => setSelectedIndex(idx)}
-                  />
-                  {opt}
-                </label>
-              ))}
-            </div>
+      <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
+        {current.options.map((opt, idx) => {
+          const isSelected = selectedIndex === idx;
+          const isCorrect = idx === current.correctIndex;
 
-            <button type="submit" className="secondary-btn">
-              Check Answer
+          let border = "1px solid #ddd";
+          let background = "#fff";
+
+          if (submitted) {
+            if (isCorrect) {
+              border = "1px solid #22c55e";
+              background = "rgba(34, 197, 94, 0.08)";
+            } else if (isSelected && !isCorrect) {
+              border = "1px solid #ef4444";
+              background = "rgba(239, 68, 68, 0.08)";
+            }
+          } else if (isSelected) {
+            border = "1px solid #2563eb";
+            background = "rgba(37, 99, 235, 0.08)";
+          }
+
+          return (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => {
+                if (submitted) return;
+                setSelectedIndex(idx);
+              }}
+              style={{
+                textAlign: "left",
+                padding: "12px 14px",
+                borderRadius: 10,
+                border,
+                background,
+                cursor: submitted ? "not-allowed" : "pointer",
+              }}
+            >
+              {opt}
             </button>
-          </form>
+          );
+        })}
+      </div>
 
-          {result === "correct" && (
-            <div className="quiz-result quiz-result-correct">
-              ✅ Correct – this matches the HP 2026 QA expectation.
-              <div style={{ marginTop: 10 }}>
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={handleNext}
-                >
-                  {currentIndex + 1 === questions.length
-                    ? "Finish Quiz"
-                    : "Next Question"}
-                </button>
-              </div>
+      <div style={{ marginTop: 14, display: "flex", gap: 10 }}>
+        {!submitted ? (
+          <button
+            type="button"
+            onClick={submitAnswer}
+            disabled={selectedIndex === null}
+          >
+            Submit Answer
+          </button>
+        ) : (
+          <button type="button" onClick={nextQuestion}>
+            Next
+          </button>
+        )}
+      </div>
+
+      {submitted && (
+        <div style={{ marginTop: 10 }}>
+          {selectedIndex === current.correctIndex ? (
+            <div style={{ color: "#16a34a" }}>✅ Correct</div>
+          ) : (
+            <div style={{ color: "#dc2626" }}>
+              ❌ Not quite — correct answer highlighted above
             </div>
           )}
-
-          {result === "wrong" && (
-            <div className="quiz-result quiz-result-wrong">
-              ❌ Not quite – review the expectations above and try again.
-            </div>
-          )}
-        </>
-      ) : (
-        <p className="quiz-finished">
-          ✅ You&apos;ve completed all questions for this criterion.
-        </p>
+        </div>
       )}
     </div>
   );
