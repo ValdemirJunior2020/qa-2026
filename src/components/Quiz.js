@@ -1,6 +1,7 @@
 // src/components/Quiz.js
 import React, { useState } from "react";
 import quizData from "../data/quizData";
+import { markCriterionComplete } from "../utils/progressStorage";
 
 function Quiz({ criterionId }) {
   const questions = quizData[criterionId] || [];
@@ -12,8 +13,8 @@ function Quiz({ criterionId }) {
   if (!questions.length) {
     return (
       <p className="quiz-empty">
-        Quiz questions for this criterion will be added in the next phase of
-        the 2026 portal.
+        Quiz questions for this criterion will be added in the next phase of the
+        2026 portal.
       </p>
     );
   }
@@ -24,19 +25,20 @@ function Quiz({ criterionId }) {
     e.preventDefault();
     if (selectedIndex === null) return;
 
-    if (selectedIndex === currentQuestion.correctIndex) {
-      setResult("correct");
-    } else {
-      setResult("wrong");
-    }
+    const isCorrect = selectedIndex === currentQuestion.correctIndex;
+    setResult(isCorrect ? "correct" : "wrong");
   };
 
   const handleNext = () => {
     setResult(null);
     setSelectedIndex(null);
+
+    // Go to next question OR finish + mark complete
     if (currentIndex + 1 < questions.length) {
       setCurrentIndex((prev) => prev + 1);
     } else {
+      // ✅ This is the missing piece in your code:
+      markCriterionComplete(criterionId);
       setFinished(true);
     }
   };
@@ -48,7 +50,9 @@ function Quiz({ criterionId }) {
           <p className="quiz-counter">
             Question {currentIndex + 1} of {questions.length}
           </p>
+
           <p className="quiz-question">{currentQuestion.question}</p>
+
           <form onSubmit={handleSubmit}>
             <div className="quiz-options">
               {currentQuestion.options.map((opt, idx) => (
@@ -59,20 +63,31 @@ function Quiz({ criterionId }) {
                     value={idx}
                     checked={selectedIndex === idx}
                     onChange={() => setSelectedIndex(idx)}
+                    disabled={result === "correct"} // optional: lock after correct
                   />
                   {opt}
                 </label>
               ))}
             </div>
-            <button type="submit" className="secondary-btn">
+
+            <button
+              type="submit"
+              className="secondary-btn"
+              disabled={selectedIndex === null || result === "correct"}
+            >
               Check Answer
             </button>
           </form>
+
           {result === "correct" && (
             <div className="quiz-result quiz-result-correct">
               ✅ Correct – this matches the HP 2026 QA expectation.
               <div>
-                <button className="secondary-btn" onClick={handleNext}>
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={handleNext}
+                >
                   {currentIndex + 1 === questions.length
                     ? "Finish Quiz"
                     : "Next Question"}
@@ -80,6 +95,7 @@ function Quiz({ criterionId }) {
               </div>
             </div>
           )}
+
           {result === "wrong" && (
             <div className="quiz-result quiz-result-wrong">
               ❌ Not quite – review the expectations above and try again.

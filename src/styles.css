@@ -259,3 +259,24 @@
   font-weight: 600;
   color: #047857;
 }
+.progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.reset-btn {
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid #9ca3af;
+  background: white;
+  color: #111827;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.reset-btn:hover {
+  border-color: #111827;
+}
