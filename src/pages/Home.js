@@ -1,77 +1,54 @@
 // src/pages/Home.js
-import React, { useEffect, useMemo, useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
-import criteriaData from "../data/criteriaData";
-import useProgress from "../hooks/useProgress";
-import CompletionModal from "../components/CompletionModal";
+import ReadinessCard from "../components/ReadinessCard";
 
 function Home() {
-  const { isCompleted, completedCount } = useProgress();
-  const total = criteriaData.length;
-
-  const firstIncomplete = useMemo(() => {
-    return criteriaData.find((c) => !isCompleted(c.id));
-  }, [isCompleted]);
-
-  const [showCompleteModal, setShowCompleteModal] = useState(false);
-
-  // ✅ Show modal one time when user reaches 100%
-  useEffect(() => {
-    const allDone = total > 0 && completedCount === total;
-    const flagKey = "hp2026_completion_modal_shown_v1";
-
-    if (allDone) {
-      const alreadyShown = localStorage.getItem(flagKey) === "true";
-      if (!alreadyShown) {
-        setShowCompleteModal(true);
-        localStorage.setItem(flagKey, "true");
-      }
-    }
-  }, [completedCount, total]);
-
-  const handleCloseModal = () => setShowCompleteModal(false);
-
   return (
     <section className="page">
-      <CompletionModal open={showCompleteModal} onClose={handleCloseModal} />
-
       <div className="page-header">
         <div>
           <h2>HP 2026 Quality Excellence Portal</h2>
           <p className="muted">
-            Master the expectations. Complete each criterion quiz to track your progress.
+            Interactive expectations + quizzes + readiness tracking for global reservation standards.
           </p>
         </div>
-
-        {firstIncomplete ? (
-          <Link className="primary-btn" to={`/criteria/${firstIncomplete.id}`}>
-            Continue Learning →
-          </Link>
-        ) : (
-          <span className="badge badge-complete">✅ All Completed</span>
-        )}
       </div>
 
-      <div className="criteria-grid">
-        {criteriaData.map((c) => {
-          const done = isCompleted(c.id);
+      <div className="dash-grid">
+        <ReadinessCard showGaps={true} maxGaps={4} />
 
-          return (
-            <Link key={c.id} to={`/criteria/${c.id}`} className="criteria-card">
-              <div className="criteria-card-top">
-                <h3 className="criteria-title">{c.title}</h3>
-                {done ? (
-                  <span className="badge badge-complete">✅ Completed</span>
-                ) : (
-                  <span className="badge badge-pending">⏳ In Progress</span>
-                )}
-              </div>
+        <div className="dash-card">
+          <h3>Quick Start</h3>
+          <p className="muted">
+            Start with criteria, complete quizzes, and track progress toward 2026 readiness.
+          </p>
 
-              <p className="criteria-points">{c.points} points</p>
-              <p className="criteria-desc">{c.shortDescription}</p>
+          <div className="resources-actions">
+            <Link className="primary-btn" to="/criteria">
+              Go to QA Criteria
             </Link>
-          );
-        })}
+            <Link className="secondary-btn" to="/resources">
+              Open Resources
+            </Link>
+          </div>
+        </div>
+
+        <div className="dash-card">
+          <h3>Leadership View</h3>
+          <p className="muted">
+            Monitor coaching priorities and export progress snapshots for meetings.
+          </p>
+
+          <div className="resources-actions">
+            <Link className="secondary-btn" to="/manager">
+              Manager Dashboard
+            </Link>
+            <Link className="secondary-btn" to="/admin-tools">
+              Admin Tools
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );

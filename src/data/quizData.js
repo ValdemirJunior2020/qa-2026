@@ -1,68 +1,144 @@
 // src/data/quizData.js
-
-// For now we start with full quiz only for "agent-readiness".
-// Later we will add entries for each additional criterion.
+/**
+ * Quiz bank keyed by criterionId (must match criteriaData IDs exactly).
+ * If a criterionId is missing or has an empty array, the app shows “Quiz coming soon”.
+ */
 
 const quizData = {
-  "agent-readiness": [
+  greeting: [
     {
-      id: "ar-q1",
-      question: "According to HP expectations, how quickly should an agent normally answer an incoming call?",
+      id: "greeting-1",
+      question: "Which greeting best matches HP 2026 expectations?",
       options: [
-        "Within 2–3 rings (around 3–5 seconds), fully ready to help",
-        "After 20–30 seconds so the guest has time to think",
-        "Only after finishing any previous notes, even if the call rings for a long time",
-        "Whenever the agent notices the call, there is no guideline"
+        "Hi. Yeah, what’s going on?",
+        "Thank you for calling Hotel Reservations. My name is [Name], how may I assist you?",
+        "HotelPlanner reservations, what do you want?",
       ],
-      correctIndex: 0
+      correctIndex: 1,
     },
     {
-      id: "ar-q2",
-      question: "An agent clicks 'Available' but is still logging into systems when the call comes in. What is the correct HP behavior?",
+      id: "greeting-2",
+      question: "What is required in the opening?",
       options: [
-        "Answer anyway and tell the guest to wait in silence while tools load",
-        "Let the call time out because the agent is not fully ready",
-        "Agent should always log into tools and be fully prepared before going Available",
-        "Ask the guest to call back later when the agent is ready"
+        "Only the agent name",
+        "Branding + agent name + offer of help",
+        "Only asking for itinerary number immediately",
       ],
-      correctIndex: 2
+      correctIndex: 1,
     },
-    {
-      id: "ar-q3",
-      question: "Which of the following best represents good 'Agent Readiness' at the start of a shift?",
-      options: [
-        "Arriving on time, systems opened, headset tested, ready to answer as soon as set to Available",
-        "Arriving on time but opening systems only after the first call connects",
-        "Arriving late but answering quickly to catch up",
-        "Waiting to put on the headset until the guest says hello"
-      ],
-      correctIndex: 0
-    },
-    {
-      id: "ar-q4",
-      question: "What is the main risk if agents consistently take too long to answer calls?",
-      options: [
-        "More time for agents to relax between calls",
-        "Higher chance of abandoned calls and poor customer experience",
-        "Guests will talk slower when the agent finally answers",
-        "No impact, as long as the agent apologizes"
-      ],
-      correctIndex: 1
-    },
-    {
-      id: "ar-q5",
-      question: "Which environment best matches HP’s expectation for answering calls?",
-      options: [
-        "Quiet workspace, no side conversations, no eating, and focus on the caller",
-        "Background TV or conversations as long as the agent speaks loudly",
-        "Eating during the call as long as the agent is polite",
-        "Music playing loudly to keep the agent motivated"
-      ],
-      correctIndex: 0
-    }
-  ]
+  ],
 
-  // TODO: we will add quizzes for the other criteria after this step
+  verification: [
+    {
+      id: "verification-1",
+      question: "What should the agent verify when the guest has a reservation?",
+      options: [
+        "Only the guest name",
+        "Itinerary number, guest name, hotel/property, and check-in/check-out dates",
+        "Only the hotel name",
+      ],
+      correctIndex: 1,
+    },
+    {
+      id: "verification-2",
+      question: "Why do we repeat details back to the guest?",
+      options: [
+        "To fill time on the call",
+        "To prevent errors and confirm accuracy before taking action",
+        "Because it is optional and doesn’t matter",
+      ],
+      correctIndex: 1,
+    },
+  ],
+
+  empathy: [
+    {
+      id: "empathy-1",
+      question: "Which response best matches empathy & tone expectations?",
+      options: [
+        "That’s not my fault. You need to call the hotel.",
+        "I understand how frustrating this is. I’m here to help and I’ll review the details with you now.",
+        "Calm down. It happens.",
+      ],
+      correctIndex: 1,
+    },
+    {
+      id: "empathy-2",
+      question: "What is the correct tone standard during a complaint?",
+      options: [
+        "Match the guest’s anger",
+        "Stay calm, professional, empathetic, and in control",
+        "Talk fast to end the call quickly",
+      ],
+      correctIndex: 1,
+    },
+  ],
+
+  refunds: [
+    {
+      id: "refunds-1",
+      question: "What is the correct refund approach?",
+      options: [
+        "Promise the refund will be processed today",
+        "Explain policy, verify details, and set expectations without guaranteeing the outcome",
+        "Tell the guest to dispute with the bank immediately",
+      ],
+      correctIndex: 1,
+    },
+    {
+      id: "refunds-2",
+      question: "Which statement is compliant?",
+      options: [
+        "I guarantee you’ll get a refund.",
+        "I can submit the request and follow policy. I can’t guarantee approval, but I will guide you through next steps.",
+        "The hotel has to refund you no matter what.",
+      ],
+      correctIndex: 1,
+    },
+  ],
+
+  "group-flow": [
+    {
+      id: "group-flow-1",
+      question: "What qualifies as a group request?",
+      options: ["5+ rooms", "9+ rooms", "Any number if it’s business travel"],
+      correctIndex: 1,
+    },
+    {
+      id: "group-flow-2",
+      question:
+        "If the guest wants to change dates after submitting a group request, what is the correct guidance?",
+      options: [
+        "We can edit the dates on the same request",
+        "Dates cannot be changed; a new request must be created using a different email",
+        "Tell them to call the hotel directly and we’re done",
+      ],
+      correctIndex: 1,
+    },
+  ],
+
+  recap: [
+    {
+      id: "recap-1",
+      question: "What is required in a strong recap?",
+      options: [
+        "Just say ‘okay you’re all set’ and end the call",
+        "Summarize action taken + next steps + expectations/timeline",
+        "Only repeat the hotel name",
+      ],
+      correctIndex: 1,
+    },
+    {
+      id: "recap-2",
+      question: "What should the agent ask before ending the call?",
+      options: [
+        "Nothing — just end the call",
+        "Is there anything else I can assist you with today?",
+        "Ask for the guest’s credit card number again",
+      ],
+      correctIndex: 1,
+    },
+  ],
 };
 
 export default quizData;
