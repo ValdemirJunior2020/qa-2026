@@ -7,9 +7,9 @@ import expectationsFallback from "../data/expectationsData";
 import { supabase } from "../supabaseClient";
 
 import Quiz from "../components/Quiz";
+import useProgress from "../hooks/useProgress";
 
 function normalizeExpectation(rowOrFallback) {
-  // We store JSONB in Supabase; keep it consistent
   const row = rowOrFallback || {};
   const sectionsObj = row.sections || {};
   const bullets = Array.isArray(sectionsObj.bullets) ? sectionsObj.bullets : [];
@@ -30,6 +30,7 @@ function normalizeExpectation(rowOrFallback) {
 
 function DetailPage() {
   const { id } = useParams();
+  const { completed, markComplete } = useProgress();
 
   const meta = useMemo(() => {
     return criteriaData.find((c) => c.id === id) || null;
@@ -60,7 +61,6 @@ function DetailPage() {
         if (!alive) return;
 
         if (supaErr) {
-          // If row not found or policy blocks, we still show fallback
           setExp(null);
           setError(supaErr.message || "Unable to load expectation from Supabase.");
         } else {
@@ -85,14 +85,10 @@ function DetailPage() {
 
   const title = meta?.title || exp?.title || fallback?.title || id;
 
-  // Choose Supabase row if present, else fallback
   const finalExp = useMemo(() => {
     if (exp) return normalizeExpectation(exp);
 
     if (fallback) {
-      // Your fallback file can be either:
-      // 1) { title, bullets, approved_phrases, common_misses, examples }
-      // 2) { title, sections:{bullets:[...]}, approved_phrases, common_misses, examples }
       const shaped = {
         id,
         title: fallback.title || title,
@@ -107,6 +103,8 @@ function DetailPage() {
     return normalizeExpectation({ id, title, sections: { bullets: [] } });
   }, [exp, fallback, id, title]);
 
+  const isCertified = !!completed?.[id];
+
   return (
     <div className="page">
       <div className="detail-wrap">
@@ -114,7 +112,14 @@ function DetailPage() {
           ← Back to QA Criteria
         </Link>
 
-        <h1 className="detail-title">{title}</h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <h1 className="detail-title" style={{ marginBottom: 0 }}>
+            {title}
+          </h1>
+          <span className="badge">
+            {isCertified ? "✅ Certified" : "⏳ Not Certified"}
+          </span>
+        </div>
 
         <p className="detail-subtitle">
           This expectation is powered by Supabase (read-only for agents).
@@ -125,13 +130,10 @@ function DetailPage() {
         {!loading && error && (
           <div className="notice notice-warn">
             ⚠️ Couldn’t load from Supabase. Showing fallback from code.
-            <div style={{ marginTop: 6, fontSize: 13, opacity: 0.9 }}>
-              {error}
-            </div>
+            <div style={{ marginTop: 6, fontSize: 13, opacity: 0.9 }}>{error}</div>
           </div>
         )}
 
-        {/* ✅ Expectation content */}
         <div className="detail-card">
           <h2 className="detail-section-title">✅ What “Good” Looks Like</h2>
 
@@ -144,7 +146,6 @@ function DetailPage() {
 
           <h3 className="detail-mini-title">Required elements</h3>
           <ul>
-            {/* Keep it simple for now: show same bullets, or later you can add a `required` array in DB */}
             {finalExp.bullets.map((b, idx) => (
               <li key={idx}>{b}</li>
             ))}
@@ -172,10 +173,20 @@ function DetailPage() {
           </ul>
         </div>
 
-        {/* ✅ QUIZ SECTION (this is what you’re missing) */}
         <div className="detail-card" style={{ marginTop: 18 }}>
           <h2 className="detail-section-title">🧠 Knowledge Check</h2>
-          <Quiz criterionId={id} />
+
+          <Quiz
+            criterionId={id}
+            onPass={({ percent, correct, total }) => {
+              markComplete(id, {
+                percent,
+                correct,
+                total,
+                passedAt: new Date().toISOString(),
+              });
+            }}
+          />
         </div>
       </div>
     </div>

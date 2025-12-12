@@ -2,13 +2,8 @@
 import criteriaData from "../data/criteriaData";
 
 /**
- * Readiness is "earned points / total points" * 100
- * Earned points = points for criteria where quiz score is PASS.
- *
- * Why PASS and not just "completed"?
- * Because your completion is intended to represent certification/pass.
- * If your app sets completion only on PASS, then both align.
- * If not, PASS is still the most honest readiness signal.
+ * Readiness = earned points / total points * 100
+ * Earned points = points for criteria where score.passed === true
  */
 
 export function getReadinessLevel(percent) {
@@ -18,11 +13,28 @@ export function getReadinessLevel(percent) {
   return { label: "Needs Work", key: "needs" };
 }
 
-export function calculateReadiness({ getScore }) {
+/**
+ * ✅ NEW API (recommended):
+ * calculateReadiness(scoresMap)
+ *
+ * scoresMap shape (from ProgressContext):
+ * {
+ *   greeting: { passed: true, percent: 100, correct: 2, total: 2, passedAt: "..." },
+ *   ...
+ * }
+ */
+export function calculateReadiness(scoresMap = {}) {
+  // safe getter so it can never crash
+  const getScore = (criterionId) => {
+    if (!scoresMap || typeof scoresMap !== "object") return null;
+    const score = scoresMap[criterionId];
+    return score && typeof score === "object" ? score : null;
+  };
+
   const totalPoints = criteriaData.reduce((sum, c) => sum + (Number(c.points) || 0), 0);
 
   const scoredRows = criteriaData.map((c) => {
-    const score = getScore(c.id); // expected shape: { passed, percent, correct, totalQuestions, updatedAt }
+    const score = getScore(c.id); // { passed, percent, correct, total, passedAt }
     const passed = score?.passed === true;
 
     return {
@@ -34,7 +46,7 @@ export function calculateReadiness({ getScore }) {
     };
   });
 
-  const earnedPoints = scoredRows.reduce((sum, r) => sum + r.earnedPoints, 0);
+  const earnedPoints = scoredRows.reduce((sum, r) => sum + (Number(r.earnedPoints) || 0), 0);
 
   const readinessPercent =
     totalPoints === 0 ? 0 : Math.round((earnedPoints / totalPoints) * 100);
@@ -42,7 +54,7 @@ export function calculateReadiness({ getScore }) {
   const level = getReadinessLevel(readinessPercent);
 
   const gaps = scoredRows
-    .filter((r) => !r.passed) // includes failed or not taken
+    .filter((r) => !r.passed) // failed or not attempted
     .map((r) => ({
       id: r.id,
       title: r.title,

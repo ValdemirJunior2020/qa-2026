@@ -5,11 +5,12 @@ import useProgress from "../hooks/useProgress";
 import { calculateReadiness } from "../utils/readiness";
 
 function ReadinessCard({ showGaps = true, maxGaps = 4 }) {
-  const { getScore } = useProgress();
+  // ✅ Use the scores map from ProgressContext
+  const { scores } = useProgress();
 
   const readiness = useMemo(() => {
-    return calculateReadiness({ getScore });
-  }, [getScore]);
+    return calculateReadiness(scores);
+  }, [scores]);
 
   const { totalPoints, earnedPoints, readinessPercent, level, gaps } = readiness;
 
@@ -18,9 +19,7 @@ function ReadinessCard({ showGaps = true, maxGaps = 4 }) {
       <div className="readiness-top">
         <div>
           <h3>2026 Readiness Score</h3>
-          <p className="muted">
-            Weighted by criterion points (PASS = earned points).
-          </p>
+          <p className="muted">Weighted by criterion points (PASS = earned points).</p>
         </div>
 
         <span className={`badge readiness-badge readiness-${level.key}`}>
@@ -36,7 +35,10 @@ function ReadinessCard({ showGaps = true, maxGaps = 4 }) {
       </div>
 
       <div className="dash-progress readiness-progress">
-        <div className="dash-progress-fill" style={{ width: `${readinessPercent}%` }} />
+        <div
+          className="dash-progress-fill"
+          style={{ width: `${readinessPercent}%` }}
+        />
       </div>
 
       {showGaps && (
@@ -54,7 +56,8 @@ function ReadinessCard({ showGaps = true, maxGaps = 4 }) {
                   </Link>
 
                   <span className="dash-sub">
-                    {g.status === "FAILED" ? `❌ FAILED` : `⏳ NOT ATTEMPTED`} • {g.points} pts
+                    {g.status === "FAILED" ? "❌ FAILED" : "⏳ NOT ATTEMPTED"} • {g.points}{" "}
+                    pts
                     {g.scorePercent !== null ? ` • ${g.scorePercent}%` : ""}
                   </span>
                 </li>
