@@ -1,177 +1,106 @@
 // src/components/Quiz.js
 import React, { useMemo, useState } from "react";
+import useProgress from "../hooks/useProgress";
 import quizData from "../data/quizData";
 
-/**
- * Props:
- *  - criterionId: string (must match criteriaData IDs and quizData keys)
- */
 function Quiz({ criterionId }) {
+  const { markComplete } = useProgress();
+
   const questions = useMemo(() => {
-    if (!criterionId) return [];
     return quizData?.[criterionId] || [];
   }, [criterionId]);
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [finished, setFinished] = useState(false);
 
-  const current = questions[currentIndex] || null;
-
-  function resetQuiz() {
-    setCurrentIndex(0);
-    setSelectedIndex(null);
-    setSubmitted(false);
-    setCorrectCount(0);
-    setFinished(false);
-  }
-
-  function submitAnswer() {
-    if (selectedIndex === null || !current) return;
-
-    const isCorrect = selectedIndex === current.correctIndex;
-    setSubmitted(true);
-
-    if (isCorrect) setCorrectCount((c) => c + 1);
-  }
-
-  function nextQuestion() {
-    if (!questions.length) return;
-
-    const next = currentIndex + 1;
-
-    if (next >= questions.length) {
-      setFinished(true);
-      return;
-    }
-
-    setCurrentIndex(next);
-    setSelectedIndex(null);
-    setSubmitted(false);
-  }
-
-  if (!criterionId) {
-    return (
-      <div className="quiz">
-        <p>Quiz coming soon.</p>
-      </div>
-    );
-  }
+  if (!criterionId) return null;
 
   if (!questions.length) {
-    return (
-      <div className="quiz">
-        <p>Quiz coming soon for this criteria.</p>
-      </div>
-    );
+    return <p className="muted">🧠 Quiz coming soon.</p>;
   }
 
-  if (finished) {
+  const onPick = (qId, idx) => {
+    setAnswers((prev) => ({ ...prev, [qId]: idx }));
+  };
+
+  const score = () => {
+    let correct = 0;
+    questions.forEach((q) => {
+      if (answers[q.id] === q.correctIndex) correct += 1;
+    });
     const total = questions.length;
-    const percent = Math.round((correctCount / total) * 100);
+    const percent = Math.round((correct / total) * 100);
+    const passed = percent >= 80; // you can change pass rule here
+    return { correct, total, percent, passed };
+  };
 
-    return (
-      <div className="quiz">
-        <h3 style={{ marginTop: 0 }}>✅ Quiz Complete</h3>
-        <p>
-          Score: <strong>{correctCount}</strong> / {total} ({percent}%)
-        </p>
+  const handleSubmit = () => {
+    const s = score();
+    setSubmitted(true);
 
-        <button type="button" onClick={resetQuiz}>
-          Retake Quiz
-        </button>
-      </div>
-    );
-  }
+    // ✅ Save into ProgressContext (localStorage)
+    markComplete(criterionId, {
+      passed: s.passed,
+      percent: s.percent,
+      correct: s.correct,
+      totalQuestions: s.total,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
+  const s = submitted ? score() : null;
 
   return (
     <div className="quiz">
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-        <div>
-          <div style={{ fontSize: 13, opacity: 0.75 }}>
-            Question {currentIndex + 1} of {questions.length}
+      {questions.map((q, qi) => (
+        <div key={q.id} className="quiz-q">
+          <h4>
+            {qi + 1}. {q.question}
+          </h4>
+
+          <div className="quiz-options">
+            {q.options.map((opt, idx) => {
+              const checked = answers[q.id] === idx;
+              const isCorrect = submitted && idx === q.correctIndex;
+              const isWrong = submitted && checked && idx !== q.correctIndex;
+
+              return (
+                <label
+                  key={idx}
+                  className={[
+                    "quiz-option",
+                    checked ? "is-checked" : "",
+                    isCorrect ? "is-correct" : "",
+                    isWrong ? "is-wrong" : "",
+                  ].join(" ")}
+                >
+                  <input
+                    type="radio"
+                    name={q.id}
+                    checked={checked || false}
+                    onChange={() => onPick(q.id, idx)}
+                    disabled={submitted}
+                  />
+                  {opt}
+                </label>
+              );
+            })}
           </div>
-          <h3 style={{ marginTop: 6 }}>{current.question}</h3>
         </div>
+      ))}
 
-        <button type="button" onClick={resetQuiz} style={{ height: 36 }}>
-          Reset Quiz
-        </button>
-      </div>
-
-      <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
-        {current.options.map((opt, idx) => {
-          const isSelected = selectedIndex === idx;
-          const isCorrect = idx === current.correctIndex;
-
-          let border = "1px solid #ddd";
-          let background = "#fff";
-
-          if (submitted) {
-            if (isCorrect) {
-              border = "1px solid #22c55e";
-              background = "rgba(34, 197, 94, 0.08)";
-            } else if (isSelected && !isCorrect) {
-              border = "1px solid #ef4444";
-              background = "rgba(239, 68, 68, 0.08)";
-            }
-          } else if (isSelected) {
-            border = "1px solid #2563eb";
-            background = "rgba(37, 99, 235, 0.08)";
-          }
-
-          return (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => {
-                if (submitted) return;
-                setSelectedIndex(idx);
-              }}
-              style={{
-                textAlign: "left",
-                padding: "12px 14px",
-                borderRadius: 10,
-                border,
-                background,
-                cursor: submitted ? "not-allowed" : "pointer",
-              }}
-            >
-              {opt}
-            </button>
-          );
-        })}
-      </div>
-
-      <div style={{ marginTop: 14, display: "flex", gap: 10 }}>
+      <div style={{ marginTop: 14 }}>
         {!submitted ? (
-          <button
-            type="button"
-            onClick={submitAnswer}
-            disabled={selectedIndex === null}
-          >
-            Submit Answer
+          <button className="btn" onClick={handleSubmit}>
+            Submit Quiz
           </button>
         ) : (
-          <button type="button" onClick={nextQuestion}>
-            Next
-          </button>
+          <div className="notice">
+            {s?.passed ? "✅ PASS" : "❌ FAIL"} — {s?.correct}/{s?.total} (
+            {s?.percent}%)
+          </div>
         )}
       </div>
-
-      {submitted && (
-        <div style={{ marginTop: 10 }}>
-          {selectedIndex === current.correctIndex ? (
-            <div style={{ color: "#16a34a" }}>✅ Correct</div>
-          ) : (
-            <div style={{ color: "#dc2626" }}>
-              ❌ Not quite — correct answer highlighted above
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
