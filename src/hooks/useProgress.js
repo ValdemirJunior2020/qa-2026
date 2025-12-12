@@ -26,9 +26,9 @@ export default function useProgress() {
     };
   }, [refresh]);
 
-  // ✅ Make these stable so Hook deps don’t “change every render”
   const completedMap = useMemo(() => state.completed || {}, [state.completed]);
   const scoresMap = useMemo(() => state.scores || {}, [state.scores]);
+  const attemptsMap = useMemo(() => state.attempts || {}, [state.attempts]);
 
   const isCompleted = useCallback(
     (criterionId) => !!completedMap[criterionId],
@@ -45,5 +45,19 @@ export default function useProgress() {
     [scoresMap]
   );
 
-  return { completedMap, scoresMap, isCompleted, completedCount, getScore, refresh };
+  const getAttempts = useCallback(
+    (criterionId) => Number(attemptsMap[criterionId] || 0),
+    [attemptsMap]
+  );
+
+  return {
+    completedMap,
+    scoresMap,
+    attemptsMap,
+    isCompleted,
+    completedCount,
+    getScore,
+    getAttempts,
+    refresh,
+  };
 }

@@ -1,7 +1,12 @@
 // src/components/Quiz.js
 import React, { useMemo, useState } from "react";
 import quizData from "../data/quizData";
-import { markCriterionComplete, saveCriterionScore } from "../utils/progressStorage";
+import {
+  incrementCriterionAttempt,
+  markCriterionComplete,
+  markCriterionIncomplete,
+  saveCriterionScore,
+} from "../utils/progressStorage";
 
 const PASS_PERCENT = 80;
 
@@ -12,12 +17,12 @@ function Quiz({ criterionId }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [result, setResult] = useState(null); // "correct" | "wrong" | null
-  const [finished, setFinished] = useState(false);
 
   const [correctCount, setCorrectCount] = useState(0);
   const [attemptedCount, setAttemptedCount] = useState(0);
 
-  const currentQuestion = questions[currentIndex];
+  const [finished, setFinished] = useState(false);
+  const [finalScore, setFinalScore] = useState(null); // {percent, passed, correct, total}
 
   const currentPercent = useMemo(() => {
     if (attemptedCount === 0) return 0;
@@ -33,6 +38,18 @@ function Quiz({ criterionId }) {
     );
   }
 
+  const currentQuestion = questions[currentIndex];
+
+  const resetQuiz = () => {
+    setCurrentIndex(0);
+    setSelectedIndex(null);
+    setResult(null);
+    setCorrectCount(0);
+    setAttemptedCount(0);
+    setFinished(false);
+    setFinalScore(null);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (selectedIndex === null) return;
@@ -45,29 +62,51 @@ function Quiz({ criterionId }) {
     setResult(isCorrect ? "correct" : "wrong");
   };
 
-  const handleNext = () => {
-    setResult(null);
-    setSelectedIndex(null);
+  const finishQuiz = (finalCorrect) => {
+    // ✅ attempt count (each full quiz completion = 1 attempt)
+    incrementCriterionAttempt(criterionId);
 
-    if (currentIndex + 1 < total) {
+    const percent = total === 0 ? 0 : Math.round((finalCorrect / total) * 100);
+    const passed = percent >= PASS_PERCENT;
+
+    const scoreObj = {
+      totalQuestions: total,
+      correct: finalCorrect,
+      percent,
+      passed,
+      passPercent: PASS_PERCENT,
+    };
+
+    saveCriterionScore(criterionId, scoreObj);
+
+    if (passed) {
+      markCriterionComplete(criterionId);
+    } else {
+      markCriterionIncomplete(criterionId);
+    }
+
+    setFinalScore({ percent, passed, correct: finalCorrect, total });
+    setFinished(true);
+  };
+
+  const handleNext = () => {
+    const isLast = currentIndex + 1 >= total;
+
+    if (!isLast) {
+      setResult(null);
+      setSelectedIndex(null);
       setCurrentIndex((prev) => prev + 1);
       return;
     }
 
-    // ✅ finish: mark complete + store score
-    const finalPercent = total === 0 ? 0 : Math.round((correctCount / total) * 100);
-    const passed = finalPercent >= PASS_PERCENT;
+    const lastWasAnswered = result !== null;
+    const lastWasCorrect = result === "correct";
 
-    saveCriterionScore(criterionId, {
-      totalQuestions: total,
-      correct: correctCount,
-      percent: finalPercent,
-      passed,
-      passPercent: PASS_PERCENT,
-    });
+    const finalCorrect = lastWasAnswered
+      ? correctCount + (lastWasCorrect ? 1 : 0)
+      : correctCount;
 
-    markCriterionComplete(criterionId);
-    setFinished(true);
+    finishQuiz(Math.min(finalCorrect, total));
   };
 
   return (
@@ -129,9 +168,44 @@ function Quiz({ criterionId }) {
           )}
         </>
       ) : (
-        <p className="quiz-finished">
-          ✅ You&apos;ve completed this quiz. Your result has been saved for manager reporting.
-        </p>
+        <div className="quiz-finished-block">
+          <h4 className="quiz-finished-title">
+            {finalScore?.passed ? "✅ PASS" : "❌ FAIL"}
+          </h4>
+
+          <p className="muted">
+            Score: <strong>{finalScore?.correct}</strong> /{" "}
+            <strong>{finalScore?.total}</strong> (
+            <strong>{finalScore?.percent}%</strong>) — Passing requires{" "}
+            <strong>{PASS_PERCENT}%</strong>.
+          </p>
+
+          {finalScore?.passed ? (
+            <p className="quiz-finished">
+              ✅ Certified for this criterion. Completion has been recorded.
+            </p>
+          ) : (
+            <p className="quiz-finished">
+              ❌ Not certified yet. Please retry to reach the passing score.
+            </p>
+          )}
+
+          <div className="quiz-finished-actions">
+            {!finalScore?.passed && (
+              <button type="button" className="primary-btn" onClick={resetQuiz}>
+                Retry Quiz
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            >
+              Back to Top
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

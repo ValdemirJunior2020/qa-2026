@@ -5,9 +5,7 @@ import { NavLink } from "react-router-dom";
 function NavBar() {
   return (
     <header className="navbar">
-      <div className="navbar-logo">
-        HP 2026 Quality Excellence Portal
-      </div>
+      <div className="navbar-logo">HP 2026 Quality Excellence Portal</div>
 
       <nav className="navbar-links">
         <NavLink to="/" end className="nav-link">
@@ -18,12 +16,20 @@ function NavBar() {
           QA Criteria
         </NavLink>
 
+        <NavLink to="/resources" className="nav-link">
+          Resources
+        </NavLink>
+
         <NavLink to="/training-guide" className="nav-link">
           Training Guide
         </NavLink>
 
         <NavLink to="/manager" className="nav-link">
           Manager
+        </NavLink>
+
+        <NavLink to="/admin-tools" className="nav-link">
+          Admin Tools
         </NavLink>
       </nav>
     </header>
