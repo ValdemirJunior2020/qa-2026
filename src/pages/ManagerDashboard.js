@@ -5,20 +5,32 @@ import criteriaData from "../data/criteriaData";
 import useProgress from "../hooks/useProgress";
 
 function ManagerDashboard() {
-  const { isCompleted, completedCount } = useProgress();
+  const { isCompleted, completedCount, getScore } = useProgress();
   const total = criteriaData.length;
 
-  const percent = total === 0 ? 0 : Math.round((completedCount / total) * 100);
+  const percentComplete = total === 0 ? 0 : Math.round((completedCount / total) * 100);
 
-  const incomplete = useMemo(() => {
-    return criteriaData.filter((c) => !isCompleted(c.id));
-  }, [isCompleted]);
+  const scored = useMemo(() => {
+    return criteriaData
+      .map((c) => {
+        const s = getScore(c.id);
+        return {
+          ...c,
+          score: s,
+          scorePercent: s?.percent ?? null,
+          passed: s?.passed ?? null,
+        };
+      })
+      .filter((c) => c.score); // only those with score saved
+  }, [getScore]);
 
-  const completed = useMemo(() => {
-    return criteriaData.filter((c) => isCompleted(c.id));
-  }, [isCompleted]);
+  const topMissed = useMemo(() => {
+    // lowest scores first
+    return [...scored].sort((a, b) => (a.scorePercent ?? 999) - (b.scorePercent ?? 999)).slice(0, 5);
+  }, [scored]);
 
-  const topFocus = incomplete.slice(0, 3);
+  const incomplete = useMemo(() => criteriaData.filter((c) => !isCompleted(c.id)), [isCompleted]);
+  const completed = useMemo(() => criteriaData.filter((c) => isCompleted(c.id)), [isCompleted]);
 
   return (
     <section className="page">
@@ -26,7 +38,7 @@ function ManagerDashboard() {
         <div>
           <h2>Manager Dashboard</h2>
           <p className="muted">
-            Operational snapshot of training completion and focus areas for HP 2026 Quality Excellence.
+            Snapshot of completion and quiz performance for HP 2026 Quality Excellence.
           </p>
         </div>
       </div>
@@ -34,39 +46,39 @@ function ManagerDashboard() {
       <div className="dash-grid">
         <div className="dash-card">
           <h3>Completion</h3>
-          <p className="dash-big">{percent}%</p>
+          <p className="dash-big">{percentComplete}%</p>
           <p className="muted">
             {completedCount}/{total} criteria completed
           </p>
 
           <div className="dash-progress">
-            <div className="dash-progress-fill" style={{ width: `${percent}%` }} />
+            <div className="dash-progress-fill" style={{ width: `${percentComplete}%` }} />
           </div>
         </div>
 
         <div className="dash-card">
-          <h3>Top Focus Areas</h3>
-          <p className="muted">Priority criteria to complete next.</p>
+          <h3>Top Missed (Lowest Scores)</h3>
+          <p className="muted">Use these for coaching priorities in 2026.</p>
 
-          {topFocus.length ? (
+          {topMissed.length ? (
             <ul className="dash-list">
-              {topFocus.map((c) => (
+              {topMissed.map((c) => (
                 <li key={c.id}>
                   <Link to={`/criteria/${c.id}`} className="dash-link">
                     {c.title}
                   </Link>
-                  <span className="dash-sub">{c.points} pts</span>
+                  <span className="dash-sub">{c.scorePercent}%</span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="badge badge-complete">✅ No focus areas — all complete</p>
+            <p className="muted">No quiz scores saved yet.</p>
           )}
         </div>
 
         <div className="dash-card">
           <h3>Completed Criteria</h3>
-          <p className="muted">Completed items in this portal instance.</p>
+          <p className="muted">Completed items.</p>
 
           {completed.length ? (
             <ul className="dash-list">
@@ -83,8 +95,8 @@ function ManagerDashboard() {
         </div>
 
         <div className="dash-card">
-          <h3>In Progress / Not Started</h3>
-          <p className="muted">Remaining criteria.</p>
+          <h3>Remaining Criteria</h3>
+          <p className="muted">Not completed yet.</p>
 
           {incomplete.length ? (
             <ul className="dash-list">

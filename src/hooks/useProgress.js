@@ -3,11 +3,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadProgress, PROGRESS_EVENT } from "../utils/progressStorage";
 
 export default function useProgress() {
-  const [completedMap, setCompletedMap] = useState(() => loadProgress().completed || {});
+  const [state, setState] = useState(() => loadProgress());
 
   const refresh = useCallback(() => {
-    const progress = loadProgress();
-    setCompletedMap(progress.completed || {});
+    setState(loadProgress());
   }, []);
 
   useEffect(() => {
@@ -15,7 +14,6 @@ export default function useProgress() {
 
     const onProgressUpdated = () => refresh();
     const onStorage = (e) => {
-      // refresh if another tab changes localStorage
       if (e.key && e.key.includes("hp2026_progress")) refresh();
     };
 
@@ -28,12 +26,24 @@ export default function useProgress() {
     };
   }, [refresh]);
 
-  const isCompleted = useCallback((criterionId) => !!completedMap[criterionId], [completedMap]);
+  // ✅ Make these stable so Hook deps don’t “change every render”
+  const completedMap = useMemo(() => state.completed || {}, [state.completed]);
+  const scoresMap = useMemo(() => state.scores || {}, [state.scores]);
+
+  const isCompleted = useCallback(
+    (criterionId) => !!completedMap[criterionId],
+    [completedMap]
+  );
 
   const completedCount = useMemo(
     () => Object.keys(completedMap).filter((k) => completedMap[k]).length,
     [completedMap]
   );
 
-  return { completedMap, isCompleted, completedCount, refresh };
+  const getScore = useCallback(
+    (criterionId) => scoresMap[criterionId] || null,
+    [scoresMap]
+  );
+
+  return { completedMap, scoresMap, isCompleted, completedCount, getScore, refresh };
 }

@@ -14,17 +14,17 @@ function emitProgressUpdated() {
 export function loadProgress() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { completed: {} };
+    if (!raw) return { completed: {}, scores: {} };
+
     const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return { completed: {}, scores: {} };
 
-    if (!parsed || typeof parsed !== "object") return { completed: {} };
-    if (!parsed.completed || typeof parsed.completed !== "object") {
-      return { completed: {} };
-    }
+    const completed = parsed.completed && typeof parsed.completed === "object" ? parsed.completed : {};
+    const scores = parsed.scores && typeof parsed.scores === "object" ? parsed.scores : {};
 
-    return parsed;
+    return { completed, scores };
   } catch {
-    return { completed: {} };
+    return { completed: {}, scores: {} };
   }
 }
 
@@ -45,26 +45,41 @@ export function markCriterionComplete(criterionId) {
 }
 
 export function resetProgress() {
-  saveProgress({ completed: {} });
+  saveProgress({ completed: {}, scores: {} });
 }
 
-/** ✅ NEW: Export progress JSON (for AdminTools) */
+/** ✅ Save a quiz score for a criterion */
+export function saveCriterionScore(criterionId, scoreObj) {
+  const progress = loadProgress();
+  progress.scores[criterionId] = {
+    ...scoreObj,
+    updatedAt: new Date().toISOString(),
+  };
+  saveProgress(progress);
+  return progress;
+}
+
+/** ✅ Read score info for a criterion */
+export function getCriterionScore(criterionId) {
+  const progress = loadProgress();
+  return progress.scores?.[criterionId] || null;
+}
+
+/** ✅ Export progress JSON (AdminTools) */
 export function exportProgressJson() {
   return JSON.stringify(loadProgress(), null, 2);
 }
 
-/** ✅ NEW: Import progress JSON (for AdminTools) */
+/** ✅ Import progress JSON (AdminTools) */
 export function importProgressJson(jsonString) {
   const parsed = JSON.parse(jsonString);
 
-  if (!parsed || typeof parsed !== "object") {
-    throw new Error("Invalid JSON");
-  }
-  if (!parsed.completed || typeof parsed.completed !== "object") {
-    throw new Error("Invalid progress format: missing 'completed'");
-  }
+  if (!parsed || typeof parsed !== "object") throw new Error("Invalid JSON");
 
-  saveProgress({ completed: parsed.completed });
+  const completed = parsed.completed && typeof parsed.completed === "object" ? parsed.completed : {};
+  const scores = parsed.scores && typeof parsed.scores === "object" ? parsed.scores : {};
+
+  saveProgress({ completed, scores });
 }
 
 export { PROGRESS_EVENT };
