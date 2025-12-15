@@ -1,4 +1,3 @@
-// src/components/NavBar.js
 import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
@@ -50,7 +49,10 @@ export default function NavBar() {
           HP 2026 Quality Excellence Portal
         </button>
 
-        {/* CENTER: Desktop Links */}
+        {/* ✅ Push everything else to the RIGHT */}
+        <div className="nav__spacer" />
+
+        {/* RIGHT: Desktop Links (ALL together) */}
         <nav className="nav__desktop">
           <NavLink to="/" className={linkClass}>
             Home
@@ -61,8 +63,6 @@ export default function NavBar() {
           <NavLink to="/training-guide" className={linkClass}>
             Training Guide
           </NavLink>
-
-          <div className="nav__spacer" />
 
           {!email ? (
             <>
@@ -125,7 +125,11 @@ export default function NavBar() {
             <NavLink to="/login" className={linkClass} onClick={close}>
               Login
             </NavLink>
-            <NavLink to="/signup" className="nav__btn nav__btn--primary" onClick={close}>
+            <NavLink
+              to="/signup"
+              className="nav__btn nav__btn--primary nav__btn--full"
+              onClick={close}
+            >
               Sign up
             </NavLink>
           </>
