@@ -5,8 +5,8 @@ import { supabase } from "../supabaseClient";
 
 export default function RequireAuth({ children }) {
   const location = useLocation();
-  const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState(null);
+  const [checking, setChecking] = useState(true);
+  const [hasSession, setHasSession] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -14,15 +14,15 @@ export default function RequireAuth({ children }) {
     async function boot() {
       const { data } = await supabase.auth.getSession();
       if (!alive) return;
-      setSession(data?.session || null);
-      setLoading(false);
+      setHasSession(!!data?.session);
+      setChecking(false);
     }
 
     boot();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
-      setSession(sess || null);
-      setLoading(false);
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasSession(!!session);
+      setChecking(false);
     });
 
     return () => {
@@ -31,10 +31,10 @@ export default function RequireAuth({ children }) {
     };
   }, []);
 
-  if (loading) return null;
+  if (checking) return <div className="page">Loading…</div>;
 
-  if (!session) {
-    return <Navigate to="/" replace state={{ from: location.pathname }} />;
+  if (!hasSession) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   return children;

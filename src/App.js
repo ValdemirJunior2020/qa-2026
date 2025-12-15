@@ -1,58 +1,100 @@
 // src/App.js
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import NavBar from "./components/NavBar";
 import ProgressBar from "./components/ProgressBar";
 
+import Home from "./pages/Home";
 import Criteria from "./pages/Criteria";
 import DetailPage from "./pages/DetailPage";
 import TrainingGuide from "./pages/TrainingGuide";
-import AdminTools from "./pages/AdminTools";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import AuthLanding from "./pages/AuthLanding";
+import AuthTest from "./pages/AuthTest";
+
+import AdminTools from "./pages/AdminTools";
+import AdminQuiz from "./pages/AdminQuiz";
+import AdminProgress from "./pages/AdminProgress";
 
 import RequireAuth from "./components/RequireAuth";
 
 function App() {
   return (
     <div className="app-root">
-      <Routes>
-        {/* ✅ Public landing (home) */}
-        <Route path="/" element={<AuthLanding />} />
+      <NavBar />
+      <main className="app-main">
+        <ProgressBar />
+        <Routes>
+          {/* Public */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
 
-        {/* ✅ Public auth pages */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+          {/* Test */}
+          <Route path="/auth-test" element={<AuthTest />} />
 
-        {/* ✅ Protected portal layout */}
-        <Route
-          path="/*"
-          element={
-            <RequireAuth>
-              <div className="portal-root">
-                <NavBar />
-                <main className="app-main">
-                  <ProgressBar />
-                  <Routes>
-                    <Route path="criteria" element={<Criteria />} />
-                    <Route path="criteria/:id" element={<DetailPage />} />
-                    <Route path="training-guide" element={<TrainingGuide />} />
+          {/* Protected app */}
+          <Route
+            path="/"
+            element={
+              <RequireAuth>
+                <Home />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/criteria"
+            element={
+              <RequireAuth>
+                <Criteria />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/criteria/:id"
+            element={
+              <RequireAuth>
+                <DetailPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/training-guide"
+            element={
+              <RequireAuth>
+                <TrainingGuide />
+              </RequireAuth>
+            }
+          />
 
-                    {/* Keep Admin Tools protected too (your NavBar already hides it unless admin) */}
-                    <Route path="admin-tools" element={<AdminTools />} />
-
-                    {/* Default after login */}
-                    <Route path="*" element={<Navigate to="/criteria" replace />} />
-                  </Routes>
-                </main>
-              </div>
-            </RequireAuth>
-          }
-        />
-      </Routes>
+          {/* Admin */}
+          <Route
+            path="/admin-tools"
+            element={
+              <RequireAuth>
+                <AdminTools />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin-quiz"
+            element={
+              <RequireAuth>
+                <AdminQuiz />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin-progress"
+            element={
+              <RequireAuth>
+                <AdminProgress />
+              </RequireAuth>
+            }
+          />
+        </Routes>
+      </main>
     </div>
   );
 }

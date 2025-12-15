@@ -25,11 +25,13 @@ body {
 /* ===============================
    NAVBAR (FINAL)
 ================================ */
+/* ===== Clean NavBar ===== */
+/* ===== Clean NavBar ===== */
 .nav {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: linear-gradient(180deg, #0b1220, #05080f);
+  background: #0b1220;
   color: #fff;
 }
 
@@ -44,14 +46,15 @@ body {
 
 .nav__brand {
   background: transparent;
-  border: none;
+  border: 0;
   color: #fff;
-  font-weight: 700;
-  font-size: 15px;
+  font-weight: 800;
   cursor: pointer;
+  padding: 0;
   white-space: nowrap;
 }
 
+/* ✅ This spacer is what forces the menu to the RIGHT */
 .nav__spacer {
   flex: 1;
 }
@@ -59,11 +62,12 @@ body {
 .nav__desktop {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px; /* ✅ spacing between menu items */
+  justify-content: flex-end; /* ✅ right align */
 }
 
 .nav__link {
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.86);
   text-decoration: none;
   font-size: 14px;
   padding: 6px 10px;
@@ -82,22 +86,22 @@ body {
 }
 
 .nav__user {
-  max-width: 220px;
+  max-width: 240px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
 .nav__btn {
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
   padding: 7px 12px;
   border-radius: 10px;
   cursor: pointer;
-  font-size: 13px;
+  white-space: nowrap;
 }
 
 .nav__btn:hover {
@@ -105,16 +109,16 @@ body {
 }
 
 .nav__btn--primary {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
-/* Burger */
 .nav__burger {
   display: none;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  width: 42px;
+  width: 44px;
   height: 38px;
   cursor: pointer;
   align-items: center;
@@ -126,9 +130,52 @@ body {
   display: block;
   width: 18px;
   height: 2px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 2px;
 }
+
+/* Mobile menu */
+.nav__mobile {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 18px 16px;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nav__mobile--open {
+  display: flex;
+}
+
+.nav__divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.14);
+  margin: 10px 0;
+}
+
+.nav__userMobile {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+  opacity: 0.92;
+}
+
+.nav__btn--full {
+  width: 100%;
+}
+
+/* ✅ Responsive breakpoint (change if you want desktop to stay longer) */
+@media (max-width: 900px) {
+  .nav__desktop {
+    display: none;
+  }
+  .nav__burger {
+    display: flex;
+  }
+}
+
 
 /* Mobile menu */
 .nav__mobile {
@@ -403,4 +450,44 @@ body {
   gap: 8px;
   cursor: pointer;
   line-height: 1.4;
+}
+/* Admin Progress Table */
+.progress-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.progress-table th,
+.progress-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border: 1px solid #e5e7eb;
+}
+
+.progress-table th {
+  background-color: #f9fafb;
+}
+
+.progress-table tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.progress-table tr:hover {
+  background-color: #f0f4f8;
+}
+
+.primary-btn {
+  margin-top: 1rem;
+  padding: 0.6rem 1.4rem;
+  border-radius: 999px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary-btn:hover {
+  background: #1d4ed8;
 }

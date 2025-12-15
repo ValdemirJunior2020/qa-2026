@@ -1,3 +1,4 @@
+// src/components/NavBar.js
 import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
@@ -49,7 +50,7 @@ export default function NavBar() {
           HP 2026 Quality Excellence Portal
         </button>
 
-        {/* ✅ Push everything else to the RIGHT */}
+        {/* Push everything else to the RIGHT */}
         <div className="nav__spacer" />
 
         {/* RIGHT: Desktop Links (ALL together) */}
@@ -92,7 +93,7 @@ export default function NavBar() {
           )}
         </nav>
 
-        {/* RIGHT: Hamburger (mobile only) */}
+        {/* Hamburger (mobile only) */}
         <button
           className="nav__burger"
           type="button"
@@ -143,7 +144,11 @@ export default function NavBar() {
               </NavLink>
             )}
 
-            <button className="nav__btn nav__btn--full" onClick={logout} type="button">
+            <button
+              className="nav__btn nav__btn--full"
+              onClick={logout}
+              type="button"
+            >
               Logout
             </button>
           </>
