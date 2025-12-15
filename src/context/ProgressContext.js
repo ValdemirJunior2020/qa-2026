@@ -5,15 +5,7 @@ import { supabase } from "../supabaseClient";
 
 export const ProgressContext = createContext(null);
 
-const LS_KEY = "hp2026_progress_v1";
-
-/**
- * Shape:
- * {
- *   completed: { [criterionId]: true },
- *   scores: { [criterionId]: { percent, correct, total, passedAt } }
- * }
- */
+const LS_KEY = "hp2026_progress_v2";
 
 function safeParse(json) {
   try {
@@ -29,9 +21,10 @@ function getEmptyState() {
 
 export function ProgressProvider({ children }) {
   const [state, setState] = useState(getEmptyState());
-  const [sessionEmail, setSessionEmail] = useState(null);
+  const [session, setSession] = useState(null);
+  const [loadingRemote, setLoadingRemote] = useState(false);
 
-  // Load from localStorage once
+  // Load localStorage once
   useEffect(() => {
     const raw = localStorage.getItem(LS_KEY);
     const parsed = raw ? safeParse(raw) : null;
@@ -48,20 +41,18 @@ export function ProgressProvider({ children }) {
     localStorage.setItem(LS_KEY, JSON.stringify(state));
   }, [state]);
 
-  // Track auth email (optional, used for sync later)
+  // Track auth session
   useEffect(() => {
     let alive = true;
 
-    async function boot() {
+    (async () => {
       const { data } = await supabase.auth.getSession();
       if (!alive) return;
-      setSessionEmail(data?.session?.user?.email || null);
-    }
-
-    boot();
+      setSession(data?.session || null);
+    })();
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
-      setSessionEmail(sess?.user?.email || null);
+      setSession(sess || null);
     });
 
     return () => {
@@ -70,13 +61,77 @@ export function ProgressProvider({ children }) {
     };
   }, []);
 
+  const userId = session?.user?.id || null;
+  const sessionEmail = session?.user?.email || null;
+
+  // ✅ Pull remote progress after login (one-time)
+  useEffect(() => {
+    let alive = true;
+    if (!userId) return;
+
+    (async () => {
+      setLoadingRemote(true);
+      try {
+        const { data, error } = await supabase
+          .from("user_progress")
+          .select("completed,scores")
+          .eq("user_id", userId)
+          .single();
+
+        // If no row yet, that's OK
+        if (!alive) return;
+
+        if (!error && data) {
+          setState((prev) => {
+            // Merge: remote wins (source of truth once logged in)
+            return {
+              completed: data.completed || prev.completed || {},
+              scores: data.scores || prev.scores || {},
+            };
+          });
+        }
+      } finally {
+        if (alive) setLoadingRemote(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [userId]);
+
+  // ✅ Upsert remote progress whenever state changes (debounced-ish)
+  useEffect(() => {
+    let cancelled = false;
+    if (!userId) return;
+
+    const t = setTimeout(async () => {
+      if (cancelled) return;
+
+      // Upsert user progress
+      await supabase.from("user_progress").upsert(
+        {
+          user_id: userId,
+          completed: state.completed || {},
+          scores: state.scores || {},
+        },
+        { onConflict: "user_id" }
+      );
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [userId, state.completed, state.scores]);
+
   const totalPoints = useMemo(() => {
-    return criteriaData.reduce((sum, c) => sum + (c.points || 0), 0);
+    return criteriaData.reduce((sum, c) => sum + (Number(c.points) || 0), 0);
   }, []);
 
   const earnedPoints = useMemo(() => {
     return criteriaData.reduce((sum, c) => {
-      return state.completed?.[c.id] ? sum + (c.points || 0) : sum;
+      return state.completed?.[c.id] ? sum + (Number(c.points) || 0) : sum;
     }, 0);
   }, [state.completed]);
 
@@ -88,6 +143,20 @@ export function ProgressProvider({ children }) {
     return Math.round((earnedPoints / totalPoints) * 100);
   }, [earnedPoints, totalPoints]);
 
+  const getScore = useCallback(
+    (criterionId) => {
+      return (state.scores || {})[criterionId] || null;
+    },
+    [state.scores]
+  );
+
+  const isCompleted = useCallback(
+    (criterionId) => {
+      return !!(state.completed || {})[criterionId];
+    },
+    [state.completed]
+  );
+
   const markComplete = useCallback(async (criterionId, scoreObj) => {
     if (!criterionId) return;
 
@@ -95,10 +164,6 @@ export function ProgressProvider({ children }) {
       completed: { ...(prev.completed || {}), [criterionId]: true },
       scores: { ...(prev.scores || {}), [criterionId]: scoreObj || prev.scores?.[criterionId] },
     }));
-
-    // Optional: later we can sync to Supabase table user_progress (not required for now)
-    // Keeping app stable even if Supabase dashboard is glitchy.
-    // If you want syncing, say "next" again and we’ll add it.
   }, []);
 
   const resetAll = useCallback(() => {
@@ -116,8 +181,12 @@ export function ProgressProvider({ children }) {
       completedCount,
       percent,
       sessionEmail,
+      userId,
+      loadingRemote,
       markComplete,
       resetAll,
+      getScore,
+      isCompleted,
     };
   }, [
     state.completed,
@@ -128,8 +197,12 @@ export function ProgressProvider({ children }) {
     completedCount,
     percent,
     sessionEmail,
+    userId,
+    loadingRemote,
     markComplete,
     resetAll,
+    getScore,
+    isCompleted,
   ]);
 
   return <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>;

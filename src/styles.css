@@ -391,3 +391,16 @@ body {
   font-size: 13px;
   color: #6b7280;
 }
+.quiz-options {
+  display: flex;
+  flex-direction: column; /* 👈 STACK vertically */
+  gap: 8px;
+}
+
+.quiz-options label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  line-height: 1.4;
+}

@@ -1,108 +1,144 @@
 // src/components/Quiz.js
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import quizFallback from "../data/quizData";
+import { supabase } from "../supabaseClient";
 import useProgress from "../hooks/useProgress";
-import quizData from "../data/quizData";
 
-function Quiz({ criterionId }) {
+export default function Quiz({ criterionId }) {
   const { markComplete } = useProgress();
 
-  const questions = useMemo(() => {
-    return quizData?.[criterionId] || [];
-  }, [criterionId]);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // local answers
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [score, setScore] = useState(null);
 
-  if (!criterionId) return null;
+  useEffect(() => {
+    let alive = true;
 
-  if (!questions.length) {
-    return <p className="muted">🧠 Quiz coming soon.</p>;
-  }
+    async function loadQuiz() {
+      setLoading(true);
+      setSubmitted(false);
+      setScore(null);
+      setAnswers({});
 
-  const onPick = (qId, idx) => {
-    setAnswers((prev) => ({ ...prev, [qId]: idx }));
+      try {
+        const { data, error } = await supabase
+          .from("quizzes")
+          .select("criterion_id,items")
+          .eq("criterion_id", criterionId)
+          .maybeSingle();
+
+        if (!alive) return;
+
+        if (!error && data?.items && Array.isArray(data.items) && data.items.length > 0) {
+          setItems(data.items);
+        } else {
+          setItems(quizFallback?.[criterionId] || []);
+        }
+      } catch {
+        if (!alive) return;
+        setItems(quizFallback?.[criterionId] || []);
+      } finally {
+        if (!alive) return;
+        setLoading(false);
+      }
+    }
+
+    if (criterionId) loadQuiz();
+
+    return () => {
+      alive = false;
+    };
+  }, [criterionId]);
+
+  const total = items.length;
+
+  const onPick = (qid, idx) => {
+    setAnswers((prev) => ({ ...prev, [qid]: idx }));
   };
 
-  const score = () => {
-    let correct = 0;
-    questions.forEach((q) => {
-      if (answers[q.id] === q.correctIndex) correct += 1;
-    });
-    const total = questions.length;
+  const canSubmit = useMemo(() => {
+    if (!items || items.length === 0) return false;
+    return items.every((q) => typeof answers[q.id] === "number");
+  }, [items, answers]);
+
+  const submit = () => {
+    if (!canSubmit) return;
+
+    const correct = items.reduce((sum, q) => {
+      return sum + (answers[q.id] === q.correctIndex ? 1 : 0);
+    }, 0);
+
     const percent = Math.round((correct / total) * 100);
-    const passed = percent >= 80; // you can change pass rule here
-    return { correct, total, percent, passed };
-  };
+    const passed = percent >= 80; // adjust threshold if you want
 
-  const handleSubmit = () => {
-    const s = score();
+    const scoreObj = {
+      passed,
+      percent,
+      correct,
+      totalQuestions: total,
+      updatedAt: new Date().toISOString(),
+    };
+
+    setScore(scoreObj);
     setSubmitted(true);
 
-    // ✅ Save into ProgressContext (localStorage)
-    markComplete(criterionId, {
-      passed: s.passed,
-      percent: s.percent,
-      correct: s.correct,
-      totalQuestions: s.total,
-      updatedAt: new Date().toISOString(),
-    });
+    if (passed) {
+      markComplete(criterionId, scoreObj);
+    }
   };
 
-  const s = submitted ? score() : null;
+  if (loading) return <div className="quiz-box">Loading quiz…</div>;
+
+  if (!items || items.length === 0) {
+    return <div className="quiz-box quiz-empty">Quiz coming soon.</div>;
+  }
 
   return (
-    <div className="quiz">
-      {questions.map((q, qi) => (
-        <div key={q.id} className="quiz-q">
-          <h4>
-            {qi + 1}. {q.question}
-          </h4>
+    <div className="quiz-box">
+      {items.map((q, idx) => (
+        <div key={q.id} style={{ marginBottom: 14 }}>
+          <div className="quiz-question">
+            <strong>{idx + 1}. {q.question}</strong>
+          </div>
 
           <div className="quiz-options">
-            {q.options.map((opt, idx) => {
-              const checked = answers[q.id] === idx;
-              const isCorrect = submitted && idx === q.correctIndex;
-              const isWrong = submitted && checked && idx !== q.correctIndex;
-
-              return (
-                <label
-                  key={idx}
-                  className={[
-                    "quiz-option",
-                    checked ? "is-checked" : "",
-                    isCorrect ? "is-correct" : "",
-                    isWrong ? "is-wrong" : "",
-                  ].join(" ")}
-                >
-                  <input
-                    type="radio"
-                    name={q.id}
-                    checked={checked || false}
-                    onChange={() => onPick(q.id, idx)}
-                    disabled={submitted}
-                  />
-                  {opt}
-                </label>
-              );
-            })}
+            {q.options.map((opt, optIdx) => (
+              <label key={optIdx}>
+                <input
+                  type="radio"
+                  name={q.id}
+                  checked={answers[q.id] === optIdx}
+                  onChange={() => onPick(q.id, optIdx)}
+                  disabled={submitted}
+                />
+                {opt}
+              </label>
+            ))}
           </div>
         </div>
       ))}
 
-      <div style={{ marginTop: 14 }}>
-        {!submitted ? (
-          <button className="btn" onClick={handleSubmit}>
-            Submit Quiz
-          </button>
-        ) : (
-          <div className="notice">
-            {s?.passed ? "✅ PASS" : "❌ FAIL"} — {s?.correct}/{s?.total} (
-            {s?.percent}%)
+      <button className="primary-btn" type="button" onClick={submit} disabled={!canSubmit || submitted}>
+        Submit Quiz
+      </button>
+
+      {submitted && score && (
+        <div className="quiz-result">
+          <div className="quiz-scoreline">
+            Score: <strong>{score.correct}</strong> / <strong>{score.totalQuestions}</strong> ({score.percent}%)
           </div>
-        )}
-      </div>
+
+          {score.passed ? (
+            <div className="quiz-result-correct">✅ PASS — criterion completed!</div>
+          ) : (
+            <div className="quiz-result-wrong">❌ Not passed — review and try again.</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
-
-export default Quiz;
