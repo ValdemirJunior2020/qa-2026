@@ -309,3 +309,85 @@ body {
   color: #6b7280;
   font-size: 0.9rem;
 }
+/* ===== Auth Landing ===== */
+.auth-landing {
+  min-height: calc(100vh - 0px);
+  display: grid;
+  place-items: center;
+  padding: 28px 16px;
+  background: #f5f7fb;
+}
+
+.auth-landing__card {
+  width: min(720px, 94vw);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+  padding: 28px 22px;
+  text-align: center;
+}
+
+.auth-landing__logo {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  margin: 0 auto 10px;
+  display: block;
+}
+
+.auth-landing__title {
+  margin: 6px 0 6px;
+  font-size: 22px;
+  font-weight: 900;
+  color: #0b1220;
+}
+
+.auth-landing__subtitle {
+  margin: 0 auto 18px;
+  max-width: 520px;
+  color: #4b5563;
+  line-height: 1.45;
+  font-size: 14px;
+}
+
+.auth-landing__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.auth-landing__btn {
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1px solid #0b1220;
+  min-width: 160px;
+}
+
+.auth-landing__btn--primary {
+  background: #0b1220;
+  color: #fff;
+}
+
+.auth-landing__btn--primary:hover {
+  opacity: 0.92;
+}
+
+.auth-landing__btn--ghost {
+  background: #fff;
+  color: #0b1220;
+}
+
+.auth-landing__btn--ghost:hover {
+  background: #f3f4f6;
+}
+
+.auth-landing__footnote {
+  margin-top: 14px;
+  font-size: 13px;
+  color: #6b7280;
+}
