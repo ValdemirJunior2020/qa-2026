@@ -329,8 +329,8 @@ body {
 }
 
 .auth-landing__logo {
-  width: 90px;
-  height: 90px;
+  width: 140px;
+  height: 140px;
   object-fit: contain;
   margin: 0 auto 10px;
   display: block;
