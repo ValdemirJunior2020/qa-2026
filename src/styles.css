@@ -964,3 +964,320 @@
   background: #f0fdf4;
   border-color: #bbf7d0;
 }
+.nav-right {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.nav-user {
+  font-size: 13px;
+  opacity: 0.9;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-btn {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+/* ===== NavBar (HP 2026) ===== */
+.hp-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #0b1220;
+  color: #fff;
+}
+
+.hp-nav__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hp-nav__brand {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.hp-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 18px; /* ✅ spacing between options */
+  width: 100%;
+}
+
+.hp-nav__spacer {
+  flex: 1;
+}
+
+.hp-nav__link {
+  color: rgba(255, 255, 255, 0.88);
+  text-decoration: none;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.hp-nav__link:hover {
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+}
+
+.hp-nav__link.active {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.hp-nav__cta {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.hp-nav__user {
+  font-size: 13px;
+  opacity: 0.92;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hp-nav__btn {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding: 7px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.hp-nav__btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.hp-nav__burger {
+  display: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  width: 42px;
+  height: 38px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.hp-nav__burger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 2px;
+}
+
+/* Mobile dropdown */
+.hp-nav__mobile {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 18px 16px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hp-nav__divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.14);
+  margin: 8px 0;
+}
+
+.hp-nav__userRow {
+  padding: 8px 10px;
+  font-size: 13px;
+  opacity: 0.92;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.hp-nav__btn--full {
+  width: 100%;
+}
+
+/* ✅ Responsive */
+@media (max-width: 840px) {
+  .hp-nav__links {
+    display: none; /* hide desktop menu */
+  }
+
+  .hp-nav__burger {
+    display: flex; /* show hamburger */
+  }
+
+  .hp-nav__mobile {
+    display: flex; /* show dropdown when open */
+  }
+}
+/* ===== Clean NavBar ===== */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #0b1220;
+  color: #fff;
+}
+
+.nav__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.nav__brand {
+  background: transparent;
+  border: 0;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.nav__desktop {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.nav__spacer {
+  flex: 1;
+}
+
+.nav__link {
+  color: rgba(255, 255, 255, 0.86);
+  text-decoration: none;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.nav__link:hover {
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+}
+
+.nav__link--active {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.nav__user {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  opacity: 0.92;
+}
+
+.nav__btn {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding: 7px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.nav__btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.nav__btn--primary {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.nav__burger {
+  display: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  width: 44px;
+  height: 38px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.nav__burger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 2px;
+}
+
+/* Mobile menu */
+.nav__mobile {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 18px 16px;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav__mobile--open {
+  display: flex;
+}
+
+.nav__divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.14);
+  margin: 10px 0;
+}
+
+.nav__userMobile {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+  opacity: 0.92;
+}
+
+.nav__btn--full {
+  width: 100%;
+}
+
+/* ✅ Responsive breakpoint */
+@media (max-width: 900px) {
+  .nav__desktop {
+    display: none; /* hide desktop links */
+  }
+  .nav__burger {
+    display: flex; /* show hamburger */
+  }
+}
