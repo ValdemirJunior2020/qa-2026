@@ -1,16 +1,13 @@
 // src/components/NavBar.js
 import React, { useEffect, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 export default function NavBar() {
   const navigate = useNavigate();
-  const location = useLocation();
-
   const [email, setEmail] = useState(null);
   const [open, setOpen] = useState(false);
 
-  // Load session + listen for auth changes
   useEffect(() => {
     let alive = true;
 
@@ -30,20 +27,6 @@ export default function NavBar() {
     };
   }, []);
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setOpen(false);
-  }, [location.pathname]);
-
-  // Close mobile menu on ESC
-  useEffect(() => {
-    const onKeyDown = (e) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
   const adminEmail = process.env.REACT_APP_ADMIN_EMAIL || "";
   const isAdmin =
     !!email && !!adminEmail && email.toLowerCase() === adminEmail.toLowerCase();
@@ -51,25 +34,40 @@ export default function NavBar() {
   const linkClass = ({ isActive }) =>
     isActive ? "nav__link nav__link--active" : "nav__link";
 
+  const close = () => setOpen(false);
+
   const logout = async () => {
     await supabase.auth.signOut();
-    setOpen(false);
+    close();
     navigate("/login");
   };
 
   return (
     <header className="nav">
       <div className="nav__inner">
-        {/* LEFT: Brand */}
-        <button className="nav__brand" type="button" onClick={() => navigate("/")}>
-          HP 2026 Quality Excellence Portal
+        {/* LEFT: Logo + Brand */}
+        <button
+          className="nav__brand"
+          onClick={() => navigate("/")}
+          style={{ display: "flex", alignItems: "center", gap: "12px" }}
+        >
+          <img
+            src="/qa-no-bg-logo.png"
+            alt="QA Logo"
+            style={{
+              height: "36px",
+              width: "auto",
+              objectFit: "contain",
+            }}
+          />
+          <span>HP 2026 Quality Excellence Portal</span>
         </button>
 
-        {/* ✅ Spacer pushes ALL menu items to the right */}
+        {/* Push everything else to the RIGHT */}
         <div className="nav__spacer" />
 
         {/* RIGHT: Desktop Links */}
-        <nav className="nav__desktop" aria-label="Primary">
+        <nav className="nav__desktop">
           <NavLink to="/" className={linkClass}>
             Home
           </NavLink>
@@ -112,7 +110,7 @@ export default function NavBar() {
         <button
           className="nav__burger"
           type="button"
-          aria-label={open ? "Close menu" : "Open menu"}
+          aria-label="Open menu"
           aria-expanded={open ? "true" : "false"}
           onClick={() => setOpen((v) => !v)}
         >
@@ -122,31 +120,15 @@ export default function NavBar() {
         </button>
       </div>
 
-      {/* Mobile Menu Backdrop (click outside closes) */}
-      {open && (
-        <button
-          type="button"
-          aria-label="Close menu backdrop"
-          onClick={() => setOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "transparent",
-            border: "none",
-            zIndex: 49,
-          }}
-        />
-      )}
-
       {/* MOBILE MENU */}
       <div className={`nav__mobile ${open ? "nav__mobile--open" : ""}`}>
-        <NavLink to="/" className={linkClass}>
+        <NavLink to="/" className={linkClass} onClick={close}>
           Home
         </NavLink>
-        <NavLink to="/criteria" className={linkClass}>
+        <NavLink to="/criteria" className={linkClass} onClick={close}>
           QA Criteria
         </NavLink>
-        <NavLink to="/training-guide" className={linkClass}>
+        <NavLink to="/training-guide" className={linkClass} onClick={close}>
           Training Guide
         </NavLink>
 
@@ -154,10 +136,14 @@ export default function NavBar() {
 
         {!email ? (
           <>
-            <NavLink to="/login" className={linkClass}>
+            <NavLink to="/login" className={linkClass} onClick={close}>
               Login
             </NavLink>
-            <NavLink to="/signup" className="nav__btn nav__btn--primary nav__btn--full">
+            <NavLink
+              to="/signup"
+              className="nav__btn nav__btn--primary nav__btn--full"
+              onClick={close}
+            >
               Sign up
             </NavLink>
           </>
@@ -166,12 +152,16 @@ export default function NavBar() {
             <div className="nav__userMobile">Signed in as: {email}</div>
 
             {isAdmin && (
-              <NavLink to="/admin-tools" className={linkClass}>
+              <NavLink to="/admin-tools" className={linkClass} onClick={close}>
                 Admin Tools
               </NavLink>
             )}
 
-            <button className="nav__btn nav__btn--full" onClick={logout} type="button">
+            <button
+              className="nav__btn nav__btn--full"
+              onClick={logout}
+              type="button"
+            >
               Logout
             </button>
           </>
