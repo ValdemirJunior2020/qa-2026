@@ -1,90 +1,124 @@
 // src/pages/DetailPage.js
-import React, { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { criteriaData } from "../data/criteriaData";
+import React, { useEffect, useMemo, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+
+import criteriaData from "../data/criteriaData";
 import trainingVideos from "../data/trainingVideos";
 
-function getYouTubeId(url = "") {
-  // supports:
-  // https://youtu.be/VIDEOID
-  // https://www.youtube.com/watch?v=VIDEOID
-  // https://www.youtube.com/embed/VIDEOID
-  try {
-    if (!url) return "";
-    if (url.includes("youtu.be/")) {
-      return url.split("youtu.be/")[1].split("?")[0];
-    }
-    if (url.includes("watch?v=")) {
-      return url.split("watch?v=")[1].split("&")[0];
-    }
-    if (url.includes("/embed/")) {
-      return url.split("/embed/")[1].split("?")[0];
-    }
-    return "";
-  } catch {
-    return "";
-  }
-}
+import { toYouTubeEmbedUrl } from "../utils/youtube";
+import useProgress from "../hooks/useProgress"; // ✅ DEFAULT import
 
 export default function DetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  const criterion = useMemo(() => criteriaData.find((c) => c.id === id), [id]);
+  // ✅ Hooks MUST always run (no early returns before these)
+  const { setCompleted, isCompleted } = useProgress();
 
-  const videoUrl = trainingVideos?.[id] || "";
-  const videoId = getYouTubeId(videoUrl);
-  const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : "";
+  const criterion = useMemo(() => {
+    return (criteriaData || []).find((c) => c.id === id) || null;
+  }, [id]);
 
-  // simple quiz state
-  const quiz = criterion?.quiz || [];
-  const [answers, setAnswers] = useState({}); // { [index]: optionIndex }
-  const [submitted, setSubmitted] = useState(false);
+  // Safe arrays even if criterion is missing
+  const checklist = useMemo(() => {
+    if (!criterion) return [];
+    if (Array.isArray(criterion.checklist)) return criterion.checklist;
+    if (Array.isArray(criterion.items)) return criterion.items;
+    if (Array.isArray(criterion.bullets)) return criterion.bullets;
+    if (Array.isArray(criterion.expectations)) return criterion.expectations;
+    return [];
+  }, [criterion]);
 
+  const quizQuestions = useMemo(() => {
+    if (!criterion) return [];
+    if (Array.isArray(criterion.questions)) return criterion.questions;
+    if (Array.isArray(criterion.quiz)) return criterion.quiz;
+    if (Array.isArray(criterion.quizQuestions)) return criterion.quizQuestions;
+    return [];
+  }, [criterion]);
+
+  // Initialize UI state (must not depend on conditional hooks)
+  const [checked, setChecked] = useState([]);
+  const [answers, setAnswers] = useState([]);
+
+  useEffect(() => {
+    setChecked(checklist.map(() => false));
+    setAnswers(quizQuestions.map(() => null));
+  }, [id, checklist, quizQuestions]);
+
+  const completed = criterion ? isCompleted(criterion.id) : false;
+
+  const videoUrlRaw = criterion ? trainingVideos?.[criterion.id] || "" : "";
+  const embedUrl = toYouTubeEmbedUrl(videoUrlRaw);
+
+  const toggleCheck = (idx) => {
+    setChecked((prev) => prev.map((v, i) => (i === idx ? !v : v)));
+  };
+
+  const answerQuestion = (qIndex, optionIndex) => {
+    setAnswers((prev) => prev.map((v, i) => (i === qIndex ? optionIndex : v)));
+  };
+
+  const allChecklistDone = checked.length ? checked.every(Boolean) : true;
+  const allQuizAnswered = answers.length ? answers.every((a) => a !== null) : true;
+
+  const markDone = () => {
+    if (!criterion) return;
+    if (!allChecklistDone || !allQuizAnswered) return;
+    setCompleted(criterion.id, true);
+  };
+
+  // ✅ Now it's safe to render "not found" (no hook ordering issues)
   if (!criterion) {
     return (
       <div className="page">
-        <Link to="/criteria" className="back-link">
-          ← Back to QA Criteria
-        </Link>
-        <h2>Not found</h2>
-        <p className="muted">This criterion id does not exist: {id}</p>
+        <h2>Criteria not found</h2>
+        <p className="muted">That criteria ID does not exist.</p>
+        <button className="primary-btn" onClick={() => navigate("/criteria")}>
+          Back to Criteria
+        </button>
       </div>
     );
   }
 
-  const score = submitted
-    ? quiz.reduce((acc, q, i) => acc + (answers[i] === q.answerIndex ? 1 : 0), 0)
-    : 0;
-
   return (
-    <div className="page criteria-detail">
-      <Link to="/criteria" className="back-link">
-        ← Back to QA Criteria
-      </Link>
+    <div className="page">
+      <div className="detail-head">
+        <div>
+          <h1 style={{ margin: 0 }}>{criterion.title || "Criteria"}</h1>
+          {criterion.subtitle && <p className="muted">{criterion.subtitle}</p>}
+          {criterion.description && <p className="muted">{criterion.description}</p>}
+        </div>
 
-      <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <h1 style={{ margin: "0.25rem 0 0" }}>{criterion.title}</h1>
-        <span className="badge badge-pending">⏳ Not Certified</span>
+        <div className="detail-actions">
+          <button className="btn" onClick={() => navigate("/criteria")}>
+            ← Back
+          </button>
+
+          <button
+            className={`primary-btn ${completed ? "primary-btn--done" : ""}`}
+            onClick={markDone}
+            disabled={!allChecklistDone || !allQuizAnswered}
+          >
+            {completed ? "✅ Completed" : "Mark Complete"}
+          </button>
+        </div>
       </div>
 
-      <p className="muted" style={{ marginTop: 8 }}>
-        {criterion.short}
-      </p>
-
-      {/* Training Video */}
-      <div className="detail-section">
-        <h3 style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          🎥 Training Video
-        </h3>
+      {/* Video (small) */}
+      <div className="card" style={{ marginTop: 14 }}>
+        <div className="card-title">Training Video</div>
 
         {!embedUrl ? (
-          <p className="muted">No video linked yet for this criterion.</p>
+          <p className="muted" style={{ margin: 0 }}>
+            No video linked yet for <b>{criterion.id}</b>.
+          </p>
         ) : (
           <div className="video-wrap">
             <iframe
               className="video-iframe"
               src={embedUrl}
-              title={`${criterion.title} Training Video`}
+              title={criterion.title || "Training Video"}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             />
@@ -92,107 +126,74 @@ export default function DetailPage() {
         )}
       </div>
 
-      {/* What Good Looks Like */}
-      <div className="detail-section">
-        <h3>✅ What “Good” Looks Like</h3>
-        <ul>
-          {(criterion.whatGoodLooksLike || []).map((x, idx) => (
-            <li key={idx}>{x}</li>
-          ))}
-        </ul>
-      </div>
+      {/* Checklist */}
+      <div className="card" style={{ marginTop: 14 }}>
+        <div className="card-title">Checklist</div>
 
-      {/* Approved Phrases */}
-      <div className="detail-section">
-        <h3>🟢 Approved Phrases</h3>
-        <ul>
-          {(criterion.approvedPhrases || []).map((x, idx) => (
-            <li key={idx}>
-              <span className="phrase-pill">{x}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Common Misses */}
-      <div className="detail-section">
-        <h3>🔴 Common Misses</h3>
-        <ul>
-          {(criterion.commonMisses || []).map((x, idx) => (
-            <li key={idx}>{x}</li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Examples */}
-      <div className="detail-section">
-        <h3>💡 Examples</h3>
-        <ul>
-          {(criterion.examples || []).map((x, idx) => (
-            <li key={idx}>{x}</li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Knowledge Check */}
-      <div className="detail-section">
-        <h3>🧠 Knowledge Check</h3>
-
-        {quiz.length === 0 ? (
-          <p className="muted">No quiz questions for this criterion yet.</p>
+        {checklist.length === 0 ? (
+          <p className="muted" style={{ margin: 0 }}>
+            No checklist items found for this criteria.
+          </p>
         ) : (
-          <form
-            className="quiz-box"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setSubmitted(true);
-            }}
-          >
-            {quiz.map((q, i) => (
-              <div key={i} style={{ marginBottom: 14 }}>
-                <div className="quiz-question">
-                  <strong>
-                    {i + 1}. {q.q}
-                  </strong>
-                </div>
-
-                <div className="quiz-options">
-                  {q.options.map((opt, oi) => (
-                    <label key={oi} className="quiz-option">
-                      <input
-                        type="radio"
-                        name={`q-${i}`}
-                        checked={answers[i] === oi}
-                        onChange={() => setAnswers((p) => ({ ...p, [i]: oi }))}
-                      />{" "}
-                      {opt}
-                    </label>
-                  ))}
-                </div>
-
-                {submitted && (
-                  <div
-                    className={
-                      answers[i] === q.answerIndex ? "quiz-result quiz-result-correct" : "quiz-result quiz-result-wrong"
-                    }
-                  >
-                    {answers[i] === q.answerIndex ? "✅ Correct" : `❌ Correct answer: ${q.options[q.answerIndex]}`}
-                  </div>
-                )}
-              </div>
+          <div className="checklist">
+            {checklist.map((item, idx) => (
+              <label key={idx} className={`check-row ${checked[idx] ? "check-row--on" : ""}`}>
+                <input
+                  type="checkbox"
+                  checked={!!checked[idx]}
+                  onChange={() => toggleCheck(idx)}
+                />
+                <span>{String(item)}</span>
+              </label>
             ))}
-
-            <button className="primary-btn" type="submit">
-              Submit Quiz
-            </button>
-
-            {submitted && (
-              <div className="quiz-scoreline">
-                Score: <strong>{score}</strong> / {quiz.length}
-              </div>
-            )}
-          </form>
+          </div>
         )}
+      </div>
+
+      {/* Quiz (stacked) */}
+      <div className="card" style={{ marginTop: 14 }}>
+        <div className="card-title">Quick Quiz</div>
+
+        {quizQuestions.length === 0 ? (
+          <p className="muted" style={{ margin: 0 }}>
+            No quiz questions found for this criteria.
+          </p>
+        ) : (
+          <div className="quiz-stack">
+            {quizQuestions.map((q, qIndex) => {
+              const qText = q.question || q.text || `Question ${qIndex + 1}`;
+              const options = q.options || q.choices || [];
+              return (
+                <div key={qIndex} className="quiz-card">
+                  <div className="quiz-q">
+                    {qIndex + 1}. {qText}
+                  </div>
+
+                  <div className="quiz-options">
+                    {options.map((opt, optIndex) => {
+                      const selected = answers[qIndex] === optIndex;
+                      return (
+                        <button
+                          key={optIndex}
+                          type="button"
+                          className={`quiz-opt ${selected ? "quiz-opt--on" : ""}`}
+                          onClick={() => answerQuestion(qIndex, optIndex)}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div style={{ marginTop: 10 }} className="muted">
+          {allChecklistDone ? "✅ Checklist done" : "⬜ Finish checklist"} •{" "}
+          {allQuizAnswered ? "✅ Quiz answered" : "⬜ Answer all questions"}
+        </div>
       </div>
     </div>
   );

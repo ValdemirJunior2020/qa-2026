@@ -1,30 +1,20 @@
 // src/data/criteriaData.js
-// ✅ Default export so: import criteriaData from "../data/criteriaData" works everywhere
 
-const criteriaData = [
+export const criteriaData = [
   {
     id: "empathy-tone",
     title: "Empathy & Tone",
-    short: "Acknowledge guest concern",
-    whatGoodLooksLike: [
-      "Acknowledge the guest’s emotions before troubleshooting",
-      "Use calm, confident wording and keep control of the call",
-      "Take ownership of next steps and set clear expectations",
+    subtitle: "Acknowledge guest concern",
+    good: [
+      "Acknowledge the concern and emotion",
+      "Stay calm, professional, and supportive",
+      "Confirm you will review and help",
     ],
     approvedPhrases: [
-      "I understand how frustrating this is — I’m here to help.",
-      "Let me review the details with you and we’ll get this resolved.",
-      "Thank you for your patience — I’m checking that now.",
+      "“I understand how frustrating this is. I’m here to help and I’ll review this with you now.”",
     ],
-    commonMisses: [
-      "Sounding rushed or dismissive",
-      "Blaming the hotel or the guest",
-      "Ignoring emotions and jumping straight to policies",
-    ],
-    examples: [
-      "Guest: “I’m really upset.” → Agent: “I understand. Let’s take care of this together.”",
-      "Agent confirms details, explains next steps, and recaps at the end.",
-    ],
+    misses: ["Blaming the guest/hotel", "Sounding rushed", "Ignoring the emotion"],
+    examples: ["Guest is upset about a charge → acknowledge + confirm next steps."],
     quiz: [
       {
         q: "Which response best matches empathy & tone expectations?",
@@ -50,32 +40,27 @@ const criteriaData = [
   {
     id: "greeting-brand",
     title: "Greeting & Brand Standard",
-    short: "Answer professionally using Hotel Reservations branding",
-    whatGoodLooksLike: [
-      "Use the required greeting + your name",
-      "Use correct brand: Hotel Reservations",
-      "Confirm you can assist and transition smoothly into discovery",
-    ],
+    subtitle: "Answer professionally using Hotel Reservations branding",
+    good: ["Correct brand name", "Agent name stated", "Warm opening question"],
     approvedPhrases: [
-      "Thank you for calling Hotel Reservations. My name is ___, how may I assist you today?",
-      "I’ll be happy to help — may I please have your itinerary number?",
+      "“Thank you for calling Hotel Reservations. My name is __, how may I assist you?”",
     ],
-    commonMisses: ["Incorrect brand name", "No greeting", "No agent name"],
-    examples: ["Professional greeting with calm tone", "Brand standard used consistently"],
+    misses: ["Wrong brand name", "No agent name", "No greeting"],
+    examples: ["Proper greeting delivered in first 5 seconds."],
     quiz: [
       {
-        q: "Which greeting matches HP 2026 expectations?",
+        q: "Which greeting is correct?",
         options: [
-          "HotelPlanner support. What do you need?",
-          "Thank you for calling Hotel Reservations. My name is ___, how may I assist you today?",
-          "Reservations.",
+          "Thanks for calling, what do you want?",
+          "Thank you for calling Hotel Reservations, my name is __, how may I assist you today?",
+          "Hello hotel planner!",
         ],
         answerIndex: 1,
       },
       {
-        q: "What brand name should the agent use?",
-        options: ["Hotel Reservations", "HotelPlanner", "The hotel front desk"],
-        answerIndex: 0,
+        q: "What must be included in the greeting?",
+        options: ["Only hotel name", "Brand + agent name + offer to help", "Nothing"],
+        answerIndex: 1,
       },
     ],
   },
@@ -83,70 +68,26 @@ const criteriaData = [
   {
     id: "group-booking-flow",
     title: "Group Booking Flow",
-    short: "Identify as group request (9+ rooms)",
-    whatGoodLooksLike: [
-      "Confirm it’s a group (9+ rooms) early",
-      "First question: destination city + state",
-      "Set expectations: rates sent by email, changes require a new request when applicable",
+    subtitle: "Identify group request (9+ rooms)",
+    good: [
+      "Confirm if 9+ rooms",
+      "Ask destination city/state FIRST",
+      "Collect dates + room count + contact info",
     ],
     approvedPhrases: [
-      "What is the city and state of your destination?",
-      "For group requests, what I’m able to do is provide the best group rates and send them via email.",
-      "To qualify for group rates, we need 9 or more rooms — how many rooms are you requesting?",
+      "“What is the city and state of your destination?”",
+      "“How many rooms and what dates are you looking for?”",
     ],
-    commonMisses: [
-      "Treating group like a normal reservation",
-      "Skipping destination city/state question",
-      "Not setting expectations about email delivery/timeline",
-    ],
-    examples: [
-      "Guest wants 12 rooms → agent confirms destination, dates, room count, then explains email quote process.",
-    ],
+    misses: ["Treating group like normal booking", "Skipping destination question"],
+    examples: ["Guest wants 12 rooms → follow group flow."],
     quiz: [
+      { q: "What qualifies as a group request?", options: ["3+", "5+", "9+"], answerIndex: 2 },
       {
-        q: "What is the FIRST question an agent should ask for group requests?",
+        q: "First question for group requests?",
         options: [
-          "What is your itinerary number?",
+          "What’s your itinerary number?",
           "What is the city and state of your destination?",
-          "Do you want a refund?",
-        ],
-        answerIndex: 1,
-      },
-      {
-        q: "How many rooms qualify as a group request?",
-        options: ["5+", "9+", "Any number"],
-        answerIndex: 1,
-      },
-    ],
-  },
-
-  {
-    id: "refunds-policy",
-    title: "Refunds & Policy Compliance",
-    short: "Explain refund policy and timeline clearly",
-    whatGoodLooksLike: [
-      "Check hotel cancellation policy first",
-      "Avoid promising refunds when not approved",
-      "Explain timelines clearly (ex: 2–10 business days when approved)",
-    ],
-    approvedPhrases: [
-      "Let me review the hotel’s cancellation policy for your reservation.",
-      "If approved, refunds typically take 2–10 business days to post depending on your bank.",
-      "I can escalate this for review — I’ll explain the next steps clearly.",
-    ],
-    commonMisses: [
-      "Promising a refund before policy review",
-      "No timeline / vague expectation setting",
-      "Not offering an alternative (rebook/help options)",
-    ],
-    examples: ["Agent reviews policy, explains options, escalates properly if needed."],
-    quiz: [
-      {
-        q: "What should an agent do before promising a refund?",
-        options: [
-          "Guarantee it to calm the guest",
-          "Check the hotel cancellation policy and reservation details",
-          "Tell the guest to call the hotel",
+          "Can I have your credit card number?",
         ],
         answerIndex: 1,
       },
@@ -156,23 +97,60 @@ const criteriaData = [
   {
     id: "verification-accuracy",
     title: "Verification & Reservation Accuracy",
-    short: "Confirm itinerary number when applicable",
-    whatGoodLooksLike: [
-      "Confirm itinerary number (when applicable)",
-      "Confirm guest name, hotel name, check-in/check-out dates",
-      "Verify location and details match request",
+    subtitle: "Confirm itinerary + guest + hotel + dates when applicable",
+    good: [
+      "Ask for itinerary number when applicable",
+      "Confirm guest name, hotel, check-in/out dates",
+      "Verify location and dates are correct",
     ],
     approvedPhrases: [
-      "May I please have your itinerary number that starts with the letter H?",
-      "Please confirm the guest name and the hotel name on the reservation.",
-      "Let’s confirm your check-in and check-out dates to make sure everything is correct.",
+      "“May I please confirm the itinerary number starting with H?”",
+      "“Can you confirm the guest name, hotel name, and check-in/check-out dates?”",
     ],
-    commonMisses: ["Skipping verification", "Wrong hotel/dates not caught", "No recap of confirmed info"],
-    examples: ["Agent verifies itinerary + hotel + dates before taking action."],
+    misses: ["Skipping verification", "Wrong dates repeated back", "Wrong hotel confirmed"],
+    examples: ["Guest wants modification → verify all details first."],
     quiz: [
       {
-        q: "Which set of details should be verified for a booking?",
-        options: ["Only the guest name", "Itinerary, guest name, hotel name, dates", "Only the price"],
+        q: "What should you confirm when a guest has a reservation?",
+        options: ["Only hotel", "Only dates", "Itinerary + guest + hotel + dates"],
+        answerIndex: 2,
+      },
+      {
+        q: "When should you ask for itinerary number?",
+        options: ["Always", "When applicable / guest has a booking", "Never"],
+        answerIndex: 1,
+      },
+    ],
+  },
+
+  {
+    id: "refunds-policy",
+    title: "Refunds & Policy Compliance",
+    subtitle: "Explain policy + timeline clearly (no false promises)",
+    good: [
+      "Check policy and explain it clearly",
+      "No fake confirmations of refunds",
+      "Set correct refund timeline expectations",
+    ],
+    approvedPhrases: [
+      "“Let me review the cancellation policy attached to your booking.”",
+      "“If approved, refunds can take 2–10 business days to process.”",
+    ],
+    misses: ["Promising refund without policy", "Saying “you will get refunded”"],
+    examples: ["Non-refundable booking → explain policy and next steps."],
+    quiz: [
+      {
+        q: "What is the safe way to speak about refunds?",
+        options: [
+          "Guarantee a refund to calm the guest",
+          "Explain policy and say refund depends on approval",
+          "Tell them to call the hotel and hang up",
+        ],
+        answerIndex: 1,
+      },
+      {
+        q: "Refund processing timeline (if approved) is typically:",
+        options: ["Instant", "2–10 business days", "60 days always"],
         answerIndex: 1,
       },
     ],
@@ -181,28 +159,36 @@ const criteriaData = [
   {
     id: "recap-next-steps",
     title: "Recap & Next Steps",
-    short: "Summarize action taken",
-    whatGoodLooksLike: [
-      "Summarize what was done and what will happen next",
-      "Confirm guest understands timelines and expectations",
-      "Close professionally",
+    subtitle: "Summarize actions taken and what happens next",
+    good: [
+      "Recap what you did",
+      "Confirm what the guest should expect next",
+      "Offer anything else before ending",
     ],
     approvedPhrases: [
-      "Just to recap, today we…",
-      "Your next step is… and you can expect…",
-      "Is there anything else I can assist you with today?",
+      "“Just to recap: we confirmed your details, reviewed policy, and the next step is __.”",
+      "“Is there anything else I can assist you with today?”",
     ],
-    commonMisses: ["No recap", "Unclear next steps", "Abrupt ending"],
-    examples: ["Agent recaps: changes made, confirmation email timing, and closes politely."],
+    misses: ["Ending without recap", "No expectations set", "Abrupt closing"],
+    examples: ["After creating a ticket → recap + timeline + close politely."],
     quiz: [
       {
-        q: "Why is a recap important?",
-        options: ["It wastes time", "It confirms actions and sets clear expectations", "It’s only for supervisors"],
+        q: "What is the purpose of a recap?",
+        options: ["Waste time", "Clarify what was done and what’s next", "Avoid guest questions"],
+        answerIndex: 1,
+      },
+      {
+        q: "Best final question before ending the call?",
+        options: [
+          "Okay bye.",
+          "Is there anything else I can help you with today?",
+          "Don’t call back.",
+        ],
         answerIndex: 1,
       },
     ],
   },
 ];
 
+// ✅ Default export for your imports
 export default criteriaData;
-export { criteriaData };

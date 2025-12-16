@@ -700,3 +700,121 @@ body {
   .nav__logo { animation: none; }
   .nav__brand:hover .nav__logo { transform: none; }
 }
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.video-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  padding: 0.9rem;
+}
+
+.video-embed {
+  margin-top: 0.75rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: #000;
+}
+
+.video-embed iframe {
+  width: 100%;
+  height: 220px; /* ✅ smaller */
+  border: 0;
+}
+
+@media (max-width: 520px) {
+  .video-embed iframe {
+    height: 190px;
+  }
+}
+/* Smaller video */
+.video-wrap {
+  width: 100%;
+  max-width: 720px; /* ✅ keeps it smaller */
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.video-iframe {
+  width: 100%;
+  height: 360px; /* ✅ not huge */
+  border: 0;
+  display: block;
+}
+
+/* Detail header */
+.detail-head {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Checklist */
+.checklist {
+  display: grid;
+  gap: 10px;
+}
+
+.check-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+.check-row--on {
+  border-color: rgba(0,255,160,0.35);
+}
+
+/* ✅ Quiz stacked vertically */
+.quiz-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.quiz-card {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+.quiz-q {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.quiz-options {
+  display: grid;           /* ✅ one below the other */
+  gap: 8px;
+}
+
+.quiz-opt {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+}
+
+.quiz-opt--on {
+  border-color: rgba(0,170,255,0.6);
+  background: rgba(0,170,255,0.12);
+}

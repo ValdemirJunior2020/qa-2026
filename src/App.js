@@ -1,11 +1,11 @@
 // src/App.js
 import React from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import NavBar from "./components/NavBar";
 import ProgressBar from "./components/ProgressBar";
 
-import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
 import Criteria from "./pages/Criteria";
 import DetailPage from "./pages/DetailPage";
 import TrainingGuide from "./pages/TrainingGuide";
@@ -21,14 +21,11 @@ import AdminProgress from "./pages/AdminProgress";
 import RequireAuth from "./components/RequireAuth";
 
 function App() {
-  const location = useLocation();
-  const isAuthPage = location.pathname === "/login" || location.pathname === "/signup";
-
   return (
     <div className="app-root">
-      {!isAuthPage && <NavBar />}
+      <NavBar />
       <main className="app-main">
-        {!isAuthPage && <ProgressBar />}
+        <ProgressBar />
 
         <Routes>
           {/* Public */}
@@ -38,12 +35,12 @@ function App() {
           {/* Test */}
           <Route path="/auth-test" element={<AuthTest />} />
 
-          {/* Protected app */}
+          {/* Protected */}
           <Route
             path="/"
             element={
               <RequireAuth>
-                <Home />
+                <Dashboard />
               </RequireAuth>
             }
           />

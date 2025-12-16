@@ -1,64 +1,35 @@
 // src/context/ProgressContext.js
-import React, { createContext, useCallback, useEffect, useMemo, useState } from "react";
-import criteriaData from "../data/criteriaData";
+import React, { createContext, useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "../supabaseClient";
+import criteriaData from "../data/criteriaData";
 
 export const ProgressContext = createContext(null);
 
-const LS_KEY = "hp2026_progress_v1";
-
-function safeParse(json) {
-  try {
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-}
-
-function getEmptyState() {
-  return { completed: {}, scores: {} };
-}
-
 export function ProgressProvider({ children }) {
-  const [state, setState] = useState(getEmptyState());
-  const [sessionEmail, setSessionEmail] = useState(null);
-  const [sessionUserId, setSessionUserId] = useState(null);
+  const [email, setEmail] = useState(null);
+  const [userId, setUserId] = useState(null);
 
-  // Load local progress once
-  useEffect(() => {
-    const raw = localStorage.getItem(LS_KEY);
-    const parsed = raw ? safeParse(raw) : null;
-    if (parsed && typeof parsed === "object") {
-      setState({
-        completed: parsed.completed || {},
-        scores: parsed.scores || {},
-      });
-    }
-  }, []);
+  // completed shape: { [criteriaId]: true }
+  const [completed, setCompleted] = useState({});
 
-  // Persist to localStorage whenever state changes
-  useEffect(() => {
-    localStorage.setItem(LS_KEY, JSON.stringify(state));
-  }, [state]);
+  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState("");
 
-  // Auth bootstrap + listen
+  // ✅ Keep session/user synced
   useEffect(() => {
     let alive = true;
 
-    async function boot() {
+    (async () => {
       const { data } = await supabase.auth.getSession();
       if (!alive) return;
-      const user = data?.session?.user;
-      setSessionEmail(user?.email || null);
-      setSessionUserId(user?.id || null);
-    }
+      const session = data?.session;
+      setEmail(session?.user?.email || null);
+      setUserId(session?.user?.id || null);
+    })();
 
-    boot();
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
-      const user = sess?.user;
-      setSessionEmail(user?.email || null);
-      setSessionUserId(user?.id || null);
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setEmail(session?.user?.email || null);
+      setUserId(session?.user?.id || null);
     });
 
     return () => {
@@ -67,126 +38,162 @@ export function ProgressProvider({ children }) {
     };
   }, []);
 
-  // ✅ Pull server progress on login (merge with local)
+  // ✅ Load progress from Supabase when user changes
   useEffect(() => {
     let alive = true;
 
-    async function pullServerProgress() {
-      if (!sessionUserId) return;
+    async function load() {
+      setLoading(true);
+      setStatus("");
 
-      const { data, error } = await supabase
-        .from("user_progress")
-        .select("completed,scores")
-        .eq("user_id", sessionUserId)
-        .maybeSingle();
+      if (!userId) {
+        setCompleted({});
+        setLoading(false);
+        return;
+      }
 
-      if (!alive) return;
+      try {
+        const { data, error } = await supabase
+          .from("user_progress")
+          .select("completed")
+          .eq("user_id", userId)
+          .maybeSingle();
 
-      if (!error && data) {
-        // Merge: server wins only when it has values; local fills gaps
-        setState((prev) => ({
-          completed: { ...(prev.completed || {}), ...(data.completed || {}) },
-          scores: { ...(prev.scores || {}), ...(data.scores || {}) },
-        }));
+        if (!alive) return;
+
+        if (error) {
+          setStatus(error.message);
+          setCompleted({});
+        } else {
+          setCompleted(data?.completed || {});
+        }
+      } catch (e) {
+        if (!alive) return;
+        setStatus(e?.message || "Failed to load progress.");
+        setCompleted({});
+      } finally {
+        if (!alive) return;
+        setLoading(false);
       }
     }
 
-    pullServerProgress();
-
+    load();
     return () => {
       alive = false;
     };
-  }, [sessionUserId]);
+  }, [userId]);
 
-  // ✅ Push progress to server (safe upsert)
-  const pushToServer = useCallback(
-    async (nextState) => {
-      if (!sessionUserId) return;
-
-      await supabase.from("user_progress").upsert(
-        {
-          user_id: sessionUserId,
-          email: sessionEmail || null,
-          completed: nextState.completed || {},
-          scores: nextState.scores || {},
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      );
+  // ✅ Always a FUNCTION
+  const isCompleted = useCallback(
+    (criteriaId) => {
+      return !!completed?.[criteriaId];
     },
-    [sessionUserId, sessionEmail]
+    [completed]
   );
 
-  const totalPoints = useMemo(() => {
-    return criteriaData.reduce((sum, c) => sum + (c.points || 0), 0);
-  }, []);
+  // ✅ Mark complete / uncomplete
+  const setCompletedFor = useCallback(
+    async (criteriaId, value) => {
+      if (!userId) return;
 
-  const earnedPoints = useMemo(() => {
-    return criteriaData.reduce((sum, c) => {
-      return state.completed?.[c.id] ? sum + (c.points || 0) : sum;
-    }, 0);
-  }, [state.completed]);
+      const next = { ...(completed || {}) };
+      if (value) next[criteriaId] = true;
+      else delete next[criteriaId];
 
-  const totalCriteria = useMemo(() => criteriaData.length, []);
-  const completedCount = useMemo(() => Object.keys(state.completed || {}).length, [state.completed]);
+      setCompleted(next);
+
+      // Upsert to Supabase
+      const payload = {
+        user_id: userId,
+        email: email || null,
+        completed: next,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase.from("user_progress").upsert(payload, {
+        onConflict: "user_id",
+      });
+
+      if (error) {
+        // rollback if needed
+        setStatus(error.message);
+      } else {
+        setStatus("");
+      }
+    },
+    [userId, email, completed]
+  );
+
+  const toggleCompleted = useCallback(
+    async (criteriaId) => {
+      const current = !!completed?.[criteriaId];
+      await setCompletedFor(criteriaId, !current);
+    },
+    [completed, setCompletedFor]
+  );
+
+  const resetProgress = useCallback(async () => {
+    if (!userId) return;
+    setCompleted({});
+
+    const payload = {
+      user_id: userId,
+      email: email || null,
+      completed: {},
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from("user_progress").upsert(payload, {
+      onConflict: "user_id",
+    });
+
+    if (error) setStatus(error.message);
+    else setStatus("");
+  }, [userId, email]);
+
+  const totalCount = criteriaData.length;
+
+  const completedCount = useMemo(() => {
+    return Object.keys(completed || {}).length;
+  }, [completed]);
 
   const percent = useMemo(() => {
-    if (!totalPoints) return 0;
-    return Math.round((earnedPoints / totalPoints) * 100);
-  }, [earnedPoints, totalPoints]);
+    if (!totalCount) return 0;
+    return Math.round((completedCount / totalCount) * 100);
+  }, [completedCount, totalCount]);
 
-  // ✅ Mark complete + save score + sync to Supabase
-  const markComplete = useCallback(
-    async (criterionId, scoreObj) => {
-      if (!criterionId) return;
-
-      setState((prev) => {
-        const next = {
-          completed: { ...(prev.completed || {}), [criterionId]: true },
-          scores: { ...(prev.scores || {}), [criterionId]: scoreObj || prev.scores?.[criterionId] },
-        };
-
-        // fire-and-forget sync (no UI blocking)
-        pushToServer(next);
-        return next;
-      });
-    },
-    [pushToServer]
-  );
-
-  const resetAll = useCallback(() => {
-    localStorage.removeItem(LS_KEY);
-    setState(getEmptyState());
-    // optional: we can also wipe server progress later if you want
-  }, []);
-
-  const value = useMemo(() => {
-    return {
-      completed: state.completed || {},
-      scores: state.scores || {},
-      totalPoints,
-      earnedPoints,
-      totalCriteria,
+  const value = useMemo(
+    () => ({
+      loading,
+      status,
+      email,
+      userId,
+      completed,
+      totalCount,
       completedCount,
       percent,
-      sessionEmail,
-      sessionUserId,
-      markComplete,
-      resetAll,
-    };
-  }, [
-    state.completed,
-    state.scores,
-    totalPoints,
-    earnedPoints,
-    totalCriteria,
-    completedCount,
-    percent,
-    sessionEmail,
-    sessionUserId,
-    markComplete,
-    resetAll,
-  ]);
+
+      // ✅ API expected by DetailPage
+      isCompleted,
+      setCompletedFor,
+      toggleCompleted,
+      resetProgress,
+    }),
+    [
+      loading,
+      status,
+      email,
+      userId,
+      completed,
+      totalCount,
+      completedCount,
+      percent,
+      isCompleted,
+      setCompletedFor,
+      toggleCompleted,
+      resetProgress,
+    ]
+  );
 
   return <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>;
 }
