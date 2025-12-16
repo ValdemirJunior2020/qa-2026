@@ -543,3 +543,160 @@ body {
   margin: 6px 0;
   line-height: 1.35;
 }
+/* ===============================
+   NAVBAR LOGO ANIMATION
+================================ */
+
+.nav__brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.nav__logo {
+  height: 52px; /* ⬅️ BIGGER */
+  width: auto;
+  object-fit: contain;
+
+  /* ✨ Subtle glow */
+  filter: drop-shadow(0 0 6px rgba(0, 200, 255, 0.35));
+
+  /* 🫧 Soft breathing animation */
+  animation: logoGlow 4.5s ease-in-out infinite;
+}
+
+.nav__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+}
+
+/* Animation keyframes */
+@keyframes logoGlow {
+  0% {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 4px rgba(0, 200, 255, 0.25));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px rgba(0, 200, 255, 0.55));
+  }
+  100% {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 4px rgba(0, 200, 255, 0.25));
+  }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .nav__logo {
+    animation: none;
+  }
+}
+/* Hover zoom: make logo much bigger when hovered */
+.nav__brand {
+  position: relative;
+}
+
+.nav__logo {
+  height: 52px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(0, 200, 255, 0.35));
+  animation: logoGlow 4.5s ease-in-out infinite;
+  transition: transform 180ms ease, filter 180ms ease;
+  transform-origin: left center;
+}
+
+.nav__brand:hover .nav__logo {
+  transform: scale(1.6);          /* ⬅️ BIG zoom on hover */
+  filter: drop-shadow(0 0 16px rgba(0, 200, 255, 0.65));
+}
+
+@keyframes logoGlow {
+  0% { opacity: 0.9; filter: drop-shadow(0 0 4px rgba(0, 200, 255, 0.25)); }
+  50% { opacity: 1;   filter: drop-shadow(0 0 10px rgba(0, 200, 255, 0.55)); }
+  100% { opacity: 0.9; filter: drop-shadow(0 0 4px rgba(0, 200, 255, 0.25)); }
+}
+
+/* Hover zoom: make logo much bigger when hovered */
+.nav__brand {
+  position: relative;
+}
+
+.nav__logo {
+  height: 52px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(0, 200, 255, 0.35));
+  animation: logoGlow 4.5s ease-in-out infinite;
+  transition: transform 180ms ease, filter 180ms ease;
+  transform-origin: left center;
+}
+
+.nav__brand:hover .nav__logo {
+  transform: scale(1.6);          /* ⬅️ BIG zoom on hover */
+  filter: drop-shadow(0 0 16px rgba(0, 200, 255, 0.65));
+}
+
+@keyframes logoGlow {
+  0% { opacity: 0.9; filter: drop-shadow(0 0 4px rgba(0, 200, 255, 0.25)); }
+  50% { opacity: 1;   filter: drop-shadow(0 0 10px rgba(0, 200, 255, 0.55)); }
+  100% { opacity: 0.9; filter: drop-shadow(0 0 4px rgba(0, 200, 255, 0.25)); }
+}
+
+
+
+.nav__btn--mini {
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .nav__logo { animation: none; }
+  .nav__brand:hover .nav__logo { transform: none; }
+}
+.nav__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  border: 0;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.nav__logo {
+  height: 54px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(0, 200, 255, 0.30));
+  animation: logoGlow 4.5s ease-in-out infinite;
+  transition: transform 180ms ease, filter 180ms ease;
+  transform-origin: left center;
+}
+
+.nav__brand:hover .nav__logo {
+  transform: scale(1.55);
+  filter: drop-shadow(0 0 16px rgba(0, 200, 255, 0.60));
+}
+
+@keyframes logoGlow {
+  0% { opacity: 0.92; filter: drop-shadow(0 0 4px rgba(0, 200, 255, 0.22)); }
+  50% { opacity: 1;   filter: drop-shadow(0 0 10px rgba(0, 200, 255, 0.50)); }
+  100% { opacity: 0.92; filter: drop-shadow(0 0 4px rgba(0, 200, 255, 0.22)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav__logo { animation: none; }
+  .nav__brand:hover .nav__logo { transform: none; }
+}

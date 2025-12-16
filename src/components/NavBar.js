@@ -45,25 +45,12 @@ export default function NavBar() {
   return (
     <header className="nav">
       <div className="nav__inner">
-        {/* LEFT: Logo + Brand */}
-        <button
-          className="nav__brand"
-          onClick={() => navigate("/")}
-          style={{ display: "flex", alignItems: "center", gap: "12px" }}
-        >
-          <img
-            src="/qa-no-bg-logo.png"
-            alt="QA Logo"
-            style={{
-              height: "36px",
-              width: "auto",
-              objectFit: "contain",
-            }}
-          />
-          <span>HP 2026 Quality Excellence Portal</span>
+        {/* LEFT: Brand */}
+        <button className="nav__brand" onClick={() => navigate("/")} type="button">
+          <img src="/qa-no-bg-logo.png" alt="QA Portal" className="nav__logo" />
+          <span className="nav__title">HP 2026 Quality Excellence Portal</span>
         </button>
 
-        {/* Push everything else to the RIGHT */}
         <div className="nav__spacer" />
 
         {/* RIGHT: Desktop Links */}
@@ -106,11 +93,11 @@ export default function NavBar() {
           )}
         </nav>
 
-        {/* Hamburger (mobile only) */}
+        {/* Mobile hamburger */}
         <button
           className="nav__burger"
           type="button"
-          aria-label="Open menu"
+          aria-label="Menu"
           aria-expanded={open ? "true" : "false"}
           onClick={() => setOpen((v) => !v)}
         >
@@ -120,7 +107,7 @@ export default function NavBar() {
         </button>
       </div>
 
-      {/* MOBILE MENU */}
+      {/* Mobile menu */}
       <div className={`nav__mobile ${open ? "nav__mobile--open" : ""}`}>
         <NavLink to="/" className={linkClass} onClick={close}>
           Home
@@ -157,11 +144,7 @@ export default function NavBar() {
               </NavLink>
             )}
 
-            <button
-              className="nav__btn nav__btn--full"
-              onClick={logout}
-              type="button"
-            >
+            <button className="nav__btn nav__btn--full" onClick={logout} type="button">
               Logout
             </button>
           </>
