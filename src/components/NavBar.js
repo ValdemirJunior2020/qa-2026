@@ -1,13 +1,16 @@
 // src/components/NavBar.js
 import React, { useEffect, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 export default function NavBar() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [email, setEmail] = useState(null);
   const [open, setOpen] = useState(false);
 
+  // Load session + listen for auth changes
   useEffect(() => {
     let alive = true;
 
@@ -27,6 +30,20 @@ export default function NavBar() {
     };
   }, []);
 
+  // Close mobile menu on route change
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  // Close mobile menu on ESC
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   const adminEmail = process.env.REACT_APP_ADMIN_EMAIL || "";
   const isAdmin =
     !!email && !!adminEmail && email.toLowerCase() === adminEmail.toLowerCase();
@@ -34,11 +51,9 @@ export default function NavBar() {
   const linkClass = ({ isActive }) =>
     isActive ? "nav__link nav__link--active" : "nav__link";
 
-  const close = () => setOpen(false);
-
   const logout = async () => {
     await supabase.auth.signOut();
-    close();
+    setOpen(false);
     navigate("/login");
   };
 
@@ -46,15 +61,15 @@ export default function NavBar() {
     <header className="nav">
       <div className="nav__inner">
         {/* LEFT: Brand */}
-        <button className="nav__brand" onClick={() => navigate("/")}>
+        <button className="nav__brand" type="button" onClick={() => navigate("/")}>
           HP 2026 Quality Excellence Portal
         </button>
 
-        {/* Push everything else to the RIGHT */}
+        {/* ✅ Spacer pushes ALL menu items to the right */}
         <div className="nav__spacer" />
 
-        {/* RIGHT: Desktop Links (ALL together) */}
-        <nav className="nav__desktop">
+        {/* RIGHT: Desktop Links */}
+        <nav className="nav__desktop" aria-label="Primary">
           <NavLink to="/" className={linkClass}>
             Home
           </NavLink>
@@ -97,7 +112,7 @@ export default function NavBar() {
         <button
           className="nav__burger"
           type="button"
-          aria-label="Open menu"
+          aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open ? "true" : "false"}
           onClick={() => setOpen((v) => !v)}
         >
@@ -107,15 +122,31 @@ export default function NavBar() {
         </button>
       </div>
 
+      {/* Mobile Menu Backdrop (click outside closes) */}
+      {open && (
+        <button
+          type="button"
+          aria-label="Close menu backdrop"
+          onClick={() => setOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "transparent",
+            border: "none",
+            zIndex: 49,
+          }}
+        />
+      )}
+
       {/* MOBILE MENU */}
       <div className={`nav__mobile ${open ? "nav__mobile--open" : ""}`}>
-        <NavLink to="/" className={linkClass} onClick={close}>
+        <NavLink to="/" className={linkClass}>
           Home
         </NavLink>
-        <NavLink to="/criteria" className={linkClass} onClick={close}>
+        <NavLink to="/criteria" className={linkClass}>
           QA Criteria
         </NavLink>
-        <NavLink to="/training-guide" className={linkClass} onClick={close}>
+        <NavLink to="/training-guide" className={linkClass}>
           Training Guide
         </NavLink>
 
@@ -123,14 +154,10 @@ export default function NavBar() {
 
         {!email ? (
           <>
-            <NavLink to="/login" className={linkClass} onClick={close}>
+            <NavLink to="/login" className={linkClass}>
               Login
             </NavLink>
-            <NavLink
-              to="/signup"
-              className="nav__btn nav__btn--primary nav__btn--full"
-              onClick={close}
-            >
+            <NavLink to="/signup" className="nav__btn nav__btn--primary nav__btn--full">
               Sign up
             </NavLink>
           </>
@@ -139,16 +166,12 @@ export default function NavBar() {
             <div className="nav__userMobile">Signed in as: {email}</div>
 
             {isAdmin && (
-              <NavLink to="/admin-tools" className={linkClass} onClick={close}>
+              <NavLink to="/admin-tools" className={linkClass}>
                 Admin Tools
               </NavLink>
             )}
 
-            <button
-              className="nav__btn nav__btn--full"
-              onClick={logout}
-              type="button"
-            >
+            <button className="nav__btn nav__btn--full" onClick={logout} type="button">
               Logout
             </button>
           </>

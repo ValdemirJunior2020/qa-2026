@@ -1,6 +1,6 @@
 // src/App.js
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 
 import NavBar from "./components/NavBar";
 import ProgressBar from "./components/ProgressBar";
@@ -21,11 +21,15 @@ import AdminProgress from "./pages/AdminProgress";
 import RequireAuth from "./components/RequireAuth";
 
 function App() {
+  const location = useLocation();
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/signup";
+
   return (
     <div className="app-root">
-      <NavBar />
+      {!isAuthPage && <NavBar />}
       <main className="app-main">
-        <ProgressBar />
+        {!isAuthPage && <ProgressBar />}
+
         <Routes>
           {/* Public */}
           <Route path="/login" element={<Login />} />

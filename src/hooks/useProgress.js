@@ -4,9 +4,12 @@ import { ProgressContext } from "../context/ProgressContext";
 
 export default function useProgress() {
   const ctx = useContext(ProgressContext);
-  if (!ctx) throw new Error("useProgress must be used inside <ProgressProvider />");
 
-  // Stable helpers (no ESLint warnings)
+  if (!ctx) {
+    throw new Error("useProgress must be used inside <ProgressProvider />");
+  }
+
+  // ✅ Stable helpers
   const isCompleted = useCallback(
     (criterionId) => !!ctx.completed?.[criterionId],
     [ctx.completed]

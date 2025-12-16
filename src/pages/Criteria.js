@@ -1,105 +1,58 @@
-import React, { useEffect, useMemo, useState } from "react";
+// src/pages/Criteria.js
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchExpectations } from "../api/expectationsApi";
+import { criteriaData } from "../data/criteriaData";
 
-function Criteria() {
-  const [criteria, setCriteria] = useState([]);
-  const [loading, setLoading] = useState(true);
-
+export default function Criteria() {
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
-  const [tag, setTag] = useState("all");
-
-  useEffect(() => {
-    fetchExpectations()
-      .then(setCriteria)
-      .finally(() => setLoading(false));
-  }, []);
-
-  const allTags = useMemo(() => {
-    const s = new Set();
-    criteria.forEach((c) => {
-      const tags = Array.isArray(c.tags) ? c.tags : [];
-      tags.forEach((t) => s.add(t));
-    });
-    return ["all", ...Array.from(s).sort()];
-  }, [criteria]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-
-    return criteria.filter((c) => {
-      const title = (c.title || "").toLowerCase();
-      const tags = Array.isArray(c.tags) ? c.tags : [];
-
-      const matchesSearch =
-        !q ||
-        title.includes(q) ||
-        tags.some((t) => String(t).toLowerCase().includes(q));
-
-      const matchesTag = tag === "all" ? true : tags.includes(tag);
-
-      // Placeholder (until certification status is stored)
-      const matchesStatus = status === "all" ? true : true;
-
-      return matchesSearch && matchesTag && matchesStatus;
-    });
-  }, [criteria, search, status, tag]);
-
-  if (loading) return <p className="page">Loading criteria…</p>;
+    if (!q) return criteriaData;
+    return criteriaData.filter(
+      (c) =>
+        c.title.toLowerCase().includes(q) ||
+        (c.short || "").toLowerCase().includes(q) ||
+        (c.id || "").toLowerCase().includes(q)
+    );
+  }, [search]);
 
   return (
-    <section className="page">
-      <h2>QA Criteria</h2>
-      <p className="muted">Search + filter by certification status and tag.</p>
+    <div className="page">
+      <h1 style={{ marginTop: 0 }}>QA Criteria</h1>
+      <p className="muted">Search and open a criterion to view training video + quiz.</p>
 
-      <div className="filters-row">
-        <div className="filter">
-          <label>Search</label>
+      <div className="criteria-controls" style={{ gridTemplateColumns: "1fr auto" }}>
+        <div className="criteria-search">
+          <label className="muted">Search</label>
           <input
+            className="input"
+            placeholder="Type to search (example: greeting)"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Type to search (example: refund, recap, empathy...)"
           />
         </div>
 
-        <div className="filter">
-          <label>Status</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="all">All</option>
-          </select>
-        </div>
-
-        <div className="filter">
-          <label>Tag</label>
-          <select value={tag} onChange={(e) => setTag(e.target.value)}>
-            {allTags.map((t) => (
-              <option key={t} value={t}>
-                {t === "all" ? "All Tags" : t}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter meta">
-          Showing {filtered.length} of {criteria.length}
+        <div className="criteria-count muted" style={{ alignSelf: "end" }}>
+          Showing {filtered.length} of {criteriaData.length}
         </div>
       </div>
 
       <div className="criteria-grid">
-        {filtered.map((c) => {
-          const firstBullet = c.sections?.[0]?.bullets?.[0] || "View expectation";
+        {filtered.map((c) => (
+          <Link key={c.id} to={`/criteria/${c.id}`} className="criteria-card">
+            <div className="criteria-card-top">
+              <div>
+                <h3 className="criteria-title">{c.title}</h3>
+                <div className="criteria-points">{c.short}</div>
+              </div>
+              <span className="badge badge-pending">Not Certified</span>
+            </div>
 
-          return (
-            <Link key={c.id} to={`/criteria/${c.id}`} className="criteria-card">
-              <h3>{c.title}</h3>
-              <p className="muted">{firstBullet}</p>
-            </Link>
-          );
-        })}
+            <p className="criteria-desc">{c.short}</p>
+          </Link>
+        ))}
       </div>
-    </section>
+    </div>
   );
 }
-
-export default Criteria;
