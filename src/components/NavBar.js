@@ -3,6 +3,12 @@ import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
+const TRAINING_GUIDE_FILE_ID = "1VaNsJlLPtSqCXTvD_YDi1PwdnXzP2SAW";
+// Direct download link:
+const TRAINING_GUIDE_DOWNLOAD_URL = `https://drive.google.com/uc?export=download&id=${TRAINING_GUIDE_FILE_ID}`;
+// Optional "view" link (opens Drive viewer):
+const TRAINING_GUIDE_VIEW_URL = `https://drive.google.com/file/d/${TRAINING_GUIDE_FILE_ID}/view?usp=sharing`;
+
 export default function NavBar() {
   const navigate = useNavigate();
   const [email, setEmail] = useState(null);
@@ -46,24 +52,38 @@ export default function NavBar() {
     <header className="nav">
       <div className="nav__inner">
         {/* LEFT: Brand */}
-        <button className="nav__brand" onClick={() => navigate("/")} type="button">
-          <img src="/qa-no-bg-logo.png" alt="QA Portal" className="nav__logo" />
-          <span className="nav__title">HP 2026 Quality Excellence Portal</span>
+        <button className="nav__brand" onClick={() => navigate("/")}>
+          HP 2026 Quality Excellence Portal
         </button>
 
+        {/* Push everything else to the RIGHT */}
         <div className="nav__spacer" />
 
-        {/* RIGHT: Desktop Links */}
+        {/* RIGHT: Desktop Links (ALL together) */}
         <nav className="nav__desktop">
           <NavLink to="/" className={linkClass}>
             Home
           </NavLink>
+
           <NavLink to="/criteria" className={linkClass}>
             QA Criteria
           </NavLink>
+
           <NavLink to="/training-guide" className={linkClass}>
             Training Guide
           </NavLink>
+
+          {/* ✅ Download button */}
+          <a
+            className="nav__btn nav__btn--primary"
+            href={TRAINING_GUIDE_DOWNLOAD_URL}
+            target="_blank"
+            rel="noreferrer"
+            onClick={close}
+            title="Download Training Guide (PDF)"
+          >
+            Download Guide
+          </a>
 
           {!email ? (
             <>
@@ -93,11 +113,11 @@ export default function NavBar() {
           )}
         </nav>
 
-        {/* Mobile hamburger */}
+        {/* Hamburger (mobile only) */}
         <button
           className="nav__burger"
           type="button"
-          aria-label="Menu"
+          aria-label="Open menu"
           aria-expanded={open ? "true" : "false"}
           onClick={() => setOpen((v) => !v)}
         >
@@ -107,7 +127,7 @@ export default function NavBar() {
         </button>
       </div>
 
-      {/* Mobile menu */}
+      {/* MOBILE MENU */}
       <div className={`nav__mobile ${open ? "nav__mobile--open" : ""}`}>
         <NavLink to="/" className={linkClass} onClick={close}>
           Home
@@ -118,6 +138,18 @@ export default function NavBar() {
         <NavLink to="/training-guide" className={linkClass} onClick={close}>
           Training Guide
         </NavLink>
+
+        {/* ✅ Mobile download button */}
+        <a
+          className="nav__btn nav__btn--primary nav__btn--full"
+          href={TRAINING_GUIDE_DOWNLOAD_URL}
+          target="_blank"
+          rel="noreferrer"
+          onClick={close}
+          title="Download Training Guide (PDF)"
+        >
+          Download Guide
+        </a>
 
         <div className="nav__divider" />
 
@@ -144,11 +176,27 @@ export default function NavBar() {
               </NavLink>
             )}
 
-            <button className="nav__btn nav__btn--full" onClick={logout} type="button">
+            <button
+              className="nav__btn nav__btn--full"
+              onClick={logout}
+              type="button"
+            >
               Logout
             </button>
           </>
         )}
+
+        {/* Optional: a "View in Drive" text link if you want */}
+        <a
+          className="nav__link"
+          href={TRAINING_GUIDE_VIEW_URL}
+          target="_blank"
+          rel="noreferrer"
+          onClick={close}
+          style={{ marginTop: 8 }}
+        >
+          View Guide in Drive
+        </a>
       </div>
     </header>
   );
