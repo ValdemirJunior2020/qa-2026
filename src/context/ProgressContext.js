@@ -1,35 +1,39 @@
 // src/context/ProgressContext.js
-import React, { createContext, useEffect, useMemo, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabaseClient";
 import criteriaData from "../data/criteriaData";
 
-export const ProgressContext = createContext(null);
+const ProgressContext = createContext(null);
 
 export function ProgressProvider({ children }) {
-  const [email, setEmail] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [email, setEmail] = useState(null);
 
-  // completed shape: { [criteriaId]: true }
+  // completed is an object like: { empathy: true, greeting: true }
   const [completed, setCompleted] = useState({});
-
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState("");
 
-  // ✅ Keep session/user synced
+  // 1) get session + subscribe
   useEffect(() => {
     let alive = true;
 
-    (async () => {
+    async function boot() {
+      setLoading(true);
       const { data } = await supabase.auth.getSession();
+      const session = data?.session || null;
+
       if (!alive) return;
-      const session = data?.session;
-      setEmail(session?.user?.email || null);
       setUserId(session?.user?.id || null);
-    })();
+      setEmail(session?.user?.email || null);
+
+      setLoading(false);
+    }
+
+    boot();
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setEmail(session?.user?.email || null);
       setUserId(session?.user?.id || null);
+      setEmail(session?.user?.email || null);
     });
 
     return () => {
@@ -38,162 +42,106 @@ export function ProgressProvider({ children }) {
     };
   }, []);
 
-  // ✅ Load progress from Supabase when user changes
+  // 2) load progress from supabase whenever userId changes
   useEffect(() => {
     let alive = true;
 
-    async function load() {
-      setLoading(true);
-      setStatus("");
-
+    async function loadProgress() {
       if (!userId) {
         setCompleted({});
-        setLoading(false);
         return;
       }
 
-      try {
-        const { data, error } = await supabase
-          .from("user_progress")
-          .select("completed")
-          .eq("user_id", userId)
-          .maybeSingle();
+      const { data, error } = await supabase
+        .from("user_progress")
+        .select("completed")
+        .eq("user_id", userId)
+        .maybeSingle();
 
-        if (!alive) return;
+      if (!alive) return;
 
-        if (error) {
-          setStatus(error.message);
-          setCompleted({});
-        } else {
-          setCompleted(data?.completed || {});
-        }
-      } catch (e) {
-        if (!alive) return;
-        setStatus(e?.message || "Failed to load progress.");
+      if (error) {
+        // keep app working even if DB not ready
         setCompleted({});
-      } finally {
-        if (!alive) return;
-        setLoading(false);
+        return;
       }
+
+      setCompleted(data?.completed || {});
     }
 
-    load();
+    loadProgress();
+
     return () => {
       alive = false;
     };
   }, [userId]);
 
-  // ✅ Always a FUNCTION
-  const isCompleted = useCallback(
-    (criteriaId) => {
-      return !!completed?.[criteriaId];
-    },
-    [completed]
-  );
-
-  // ✅ Mark complete / uncomplete
-  const setCompletedFor = useCallback(
-    async (criteriaId, value) => {
-      if (!userId) return;
-
-      const next = { ...(completed || {}) };
-      if (value) next[criteriaId] = true;
-      else delete next[criteriaId];
-
-      setCompleted(next);
-
-      // Upsert to Supabase
-      const payload = {
-        user_id: userId,
-        email: email || null,
-        completed: next,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error } = await supabase.from("user_progress").upsert(payload, {
-        onConflict: "user_id",
-      });
-
-      if (error) {
-        // rollback if needed
-        setStatus(error.message);
-      } else {
-        setStatus("");
-      }
-    },
-    [userId, email, completed]
-  );
-
-  const toggleCompleted = useCallback(
-    async (criteriaId) => {
-      const current = !!completed?.[criteriaId];
-      await setCompletedFor(criteriaId, !current);
-    },
-    [completed, setCompletedFor]
-  );
-
-  const resetProgress = useCallback(async () => {
-    if (!userId) return;
-    setCompleted({});
-
-    const payload = {
-      user_id: userId,
-      email: email || null,
-      completed: {},
-      updated_at: new Date().toISOString(),
-    };
-
-    const { error } = await supabase.from("user_progress").upsert(payload, {
-      onConflict: "user_id",
-    });
-
-    if (error) setStatus(error.message);
-    else setStatus("");
-  }, [userId, email]);
+  const isCompleted = (criterionId) => !!completed?.[criterionId];
 
   const totalCount = criteriaData.length;
+  const completedCount = useMemo(() => Object.keys(completed || {}).filter((k) => completed[k]).length, [completed]);
 
-  const completedCount = useMemo(() => {
-    return Object.keys(completed || {}).length;
-  }, [completed]);
+  const markComplete = async (criterionId, value = true) => {
+    // Update UI instantly
+    setCompleted((prev) => ({ ...(prev || {}), [criterionId]: !!value }));
 
-  const percent = useMemo(() => {
-    if (!totalCount) return 0;
-    return Math.round((completedCount / totalCount) * 100);
-  }, [completedCount, totalCount]);
+    // If not logged in, don’t try to save
+    if (!userId) return;
 
-  const value = useMemo(
-    () => ({
-      loading,
-      status,
-      email,
-      userId,
-      completed,
-      totalCount,
-      completedCount,
-      percent,
+    // Save to Supabase
+    const nextCompleted = { ...(completed || {}), [criterionId]: !!value };
 
-      // ✅ API expected by DetailPage
-      isCompleted,
-      setCompletedFor,
-      toggleCompleted,
-      resetProgress,
-    }),
-    [
-      loading,
-      status,
-      email,
-      userId,
-      completed,
-      totalCount,
-      completedCount,
-      percent,
-      isCompleted,
-      setCompletedFor,
-      toggleCompleted,
-      resetProgress,
-    ]
-  );
+    // upsert row
+    const { error } = await supabase.from("user_progress").upsert(
+      {
+        user_id: userId,
+        email: email || null,
+        completed: nextCompleted,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" }
+    );
+
+    if (error) {
+      // If save fails, we still keep UI updated (you can add toast later)
+      console.error("Saving progress failed:", error.message);
+    }
+  };
+
+  const resetProgress = async () => {
+    setCompleted({});
+    if (!userId) return;
+
+    const { error } = await supabase.from("user_progress").upsert(
+      {
+        user_id: userId,
+        email: email || null,
+        completed: {},
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" }
+    );
+
+    if (error) console.error("Reset progress failed:", error.message);
+  };
+
+  const value = {
+    loading,
+    userId,
+    email,
+    completed,
+    isCompleted,
+    markComplete,
+    resetProgress,
+    totalCount,
+    completedCount,
+  };
 
   return <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>;
+}
+
+export function useProgressContext() {
+  const ctx = useContext(ProgressContext);
+  if (!ctx) throw new Error("useProgress must be used inside <ProgressProvider />");
+  return ctx;
 }

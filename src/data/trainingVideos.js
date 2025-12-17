@@ -1,11 +1,15 @@
 // src/data/trainingVideos.js
-// Keys MUST match your criteriaData ids
+// Keys MUST match criteriaData ids exactly
 
-export const trainingVideos = {
-  "empathy-tone": "https://youtu.be/r2OpOjJSBCM",
-  "greeting-brand": "https://youtu.be/QJN7jzhG06c",
-  "group-booking-flow": "https://youtu.be/tfTqgHlErUA",
+const trainingVideos = {
+  empathy: "https://youtu.be/r2OpOjJSBCM",
+  greeting: "https://youtu.be/QJN7jzhG06c",
+  "group-flow": "https://youtu.be/tfTqgHlErUA",
+  // add later:
+  // refunds: "https://youtu.be/XXXX",
+  // verification: "https://youtu.be/XXXX",
+  // recap: "https://youtu.be/XXXX",
 };
 
-// ✅ support BOTH import styles
 export default trainingVideos;
+export { trainingVideos };

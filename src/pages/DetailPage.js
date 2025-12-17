@@ -1,198 +1,165 @@
 // src/pages/DetailPage.js
-import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 
 import criteriaData from "../data/criteriaData";
+import expectationsData from "../data/expectationsData";
 import trainingVideos from "../data/trainingVideos";
 
-import { toYouTubeEmbedUrl } from "../utils/youtube";
-import useProgress from "../hooks/useProgress"; // ✅ DEFAULT import
+import Quiz from "../components/Quiz";
+import useProgress from "../hooks/useProgress";
+
+function getYouTubeEmbed(url) {
+  if (!url) return "";
+  // supports: youtu.be/ID, youtube.com/watch?v=ID, youtube.com/embed/ID
+  const ytIdMatch =
+    url.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/) ||
+    url.match(/[?&]v=([a-zA-Z0-9_-]{6,})/) ||
+    url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{6,})/);
+
+  const id = ytIdMatch?.[1];
+  if (!id) return "";
+  return `https://www.youtube.com/embed/${id}`;
+}
 
 export default function DetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // ✅ Hooks MUST always run (no early returns before these)
-  const { setCompleted, isCompleted } = useProgress();
+  const { isCompleted, markComplete } = useProgress();
 
-  const criterion = useMemo(() => {
-    return (criteriaData || []).find((c) => c.id === id) || null;
-  }, [id]);
+  const meta = useMemo(() => criteriaData.find((c) => c.id === id) || null, [id]);
+  const exp = expectationsData?.[id] || null;
 
-  // Safe arrays even if criterion is missing
-  const checklist = useMemo(() => {
-    if (!criterion) return [];
-    if (Array.isArray(criterion.checklist)) return criterion.checklist;
-    if (Array.isArray(criterion.items)) return criterion.items;
-    if (Array.isArray(criterion.bullets)) return criterion.bullets;
-    if (Array.isArray(criterion.expectations)) return criterion.expectations;
-    return [];
-  }, [criterion]);
+  const [msg, setMsg] = useState("");
 
-  const quizQuestions = useMemo(() => {
-    if (!criterion) return [];
-    if (Array.isArray(criterion.questions)) return criterion.questions;
-    if (Array.isArray(criterion.quiz)) return criterion.quiz;
-    if (Array.isArray(criterion.quizQuestions)) return criterion.quizQuestions;
-    return [];
-  }, [criterion]);
+  const done = isCompleted(id);
 
-  // Initialize UI state (must not depend on conditional hooks)
-  const [checked, setChecked] = useState([]);
-  const [answers, setAnswers] = useState([]);
+  // video
+  const rawVideo = trainingVideos?.[id] || "";
+  const embedUrl = getYouTubeEmbed(rawVideo);
 
-  useEffect(() => {
-    setChecked(checklist.map(() => false));
-    setAnswers(quizQuestions.map(() => null));
-  }, [id, checklist, quizQuestions]);
-
-  const completed = criterion ? isCompleted(criterion.id) : false;
-
-  const videoUrlRaw = criterion ? trainingVideos?.[criterion.id] || "" : "";
-  const embedUrl = toYouTubeEmbedUrl(videoUrlRaw);
-
-  const toggleCheck = (idx) => {
-    setChecked((prev) => prev.map((v, i) => (i === idx ? !v : v)));
-  };
-
-  const answerQuestion = (qIndex, optionIndex) => {
-    setAnswers((prev) => prev.map((v, i) => (i === qIndex ? optionIndex : v)));
-  };
-
-  const allChecklistDone = checked.length ? checked.every(Boolean) : true;
-  const allQuizAnswered = answers.length ? answers.every((a) => a !== null) : true;
-
-  const markDone = () => {
-    if (!criterion) return;
-    if (!allChecklistDone || !allQuizAnswered) return;
-    setCompleted(criterion.id, true);
-  };
-
-  // ✅ Now it's safe to render "not found" (no hook ordering issues)
-  if (!criterion) {
+  if (!meta) {
     return (
       <div className="page">
-        <h2>Criteria not found</h2>
-        <p className="muted">That criteria ID does not exist.</p>
-        <button className="primary-btn" onClick={() => navigate("/criteria")}>
-          Back to Criteria
-        </button>
+        <div className="card">
+          <h2>Not found</h2>
+          <p className="muted">This criterion doesn’t exist.</p>
+          <Link to="/criteria" className="nav__link">← Back to QA Criteria</Link>
+        </div>
       </div>
     );
   }
 
+  const title = exp?.title || meta.title;
+
+  const handleMarkComplete = async () => {
+    setMsg("");
+    await markComplete(id, true);
+    setMsg("✅ Marked complete!");
+  };
+
   return (
     <div className="page">
-      <div className="detail-head">
-        <div>
-          <h1 style={{ margin: 0 }}>{criterion.title || "Criteria"}</h1>
-          {criterion.subtitle && <p className="muted">{criterion.subtitle}</p>}
-          {criterion.description && <p className="muted">{criterion.description}</p>}
+      <div className="card">
+        <Link to="/criteria" className="back-link">← Back to QA Criteria</Link>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <h1 style={{ margin: "10px 0" }}>{title}</h1>
+          <span className="pill">
+            {done ? "🏆 Certified" : "⏳ Not Certified"}
+          </span>
         </div>
 
-        <div className="detail-actions">
-          <button className="btn" onClick={() => navigate("/criteria")}>
-            ← Back
-          </button>
-
-          <button
-            className={`primary-btn ${completed ? "primary-btn--done" : ""}`}
-            onClick={markDone}
-            disabled={!allChecklistDone || !allQuizAnswered}
-          >
-            {completed ? "✅ Completed" : "Mark Complete"}
-          </button>
-        </div>
-      </div>
-
-      {/* Video (small) */}
-      <div className="card" style={{ marginTop: 14 }}>
-        <div className="card-title">Training Video</div>
+        {/* Training Video */}
+        <h3 style={{ marginTop: 14 }}>🎥 Training Video</h3>
 
         {!embedUrl ? (
-          <p className="muted" style={{ margin: 0 }}>
-            No video linked yet for <b>{criterion.id}</b>.
-          </p>
+          <p className="muted">No video linked yet for this criterion.</p>
         ) : (
-          <div className="video-wrap">
+          <div className="videoWrap">
             <iframe
-              className="video-iframe"
+              className="videoFrame"
               src={embedUrl}
-              title={criterion.title || "Training Video"}
+              title={`${title} training video`}
+              frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             />
           </div>
         )}
-      </div>
 
-      {/* Checklist */}
-      <div className="card" style={{ marginTop: 14 }}>
-        <div className="card-title">Checklist</div>
+        {/* What Good Looks Like */}
+        <h3 style={{ marginTop: 18 }}>✅ What “Good” Looks Like</h3>
 
-        {checklist.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>
-            No checklist items found for this criteria.
-          </p>
+        {!exp ? (
+          <p className="muted">No expectation content found for this criterionId: {id}</p>
         ) : (
-          <div className="checklist">
-            {checklist.map((item, idx) => (
-              <label key={idx} className={`check-row ${checked[idx] ? "check-row--on" : ""}`}>
-                <input
-                  type="checkbox"
-                  checked={!!checked[idx]}
-                  onChange={() => toggleCheck(idx)}
-                />
-                <span>{String(item)}</span>
-              </label>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Quiz (stacked) */}
-      <div className="card" style={{ marginTop: 14 }}>
-        <div className="card-title">Quick Quiz</div>
-
-        {quizQuestions.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>
-            No quiz questions found for this criteria.
-          </p>
-        ) : (
-          <div className="quiz-stack">
-            {quizQuestions.map((q, qIndex) => {
-              const qText = q.question || q.text || `Question ${qIndex + 1}`;
-              const options = q.options || q.choices || [];
-              return (
-                <div key={qIndex} className="quiz-card">
-                  <div className="quiz-q">
-                    {qIndex + 1}. {qText}
-                  </div>
-
-                  <div className="quiz-options">
-                    {options.map((opt, optIndex) => {
-                      const selected = answers[qIndex] === optIndex;
-                      return (
-                        <button
-                          key={optIndex}
-                          type="button"
-                          className={`quiz-opt ${selected ? "quiz-opt--on" : ""}`}
-                          onClick={() => answerQuestion(qIndex, optIndex)}
-                        >
-                          {opt}
-                        </button>
-                      );
-                    })}
-                  </div>
+          <>
+            {Array.isArray(exp.sections) &&
+              exp.sections.map((s, idx) => (
+                <div key={idx} style={{ marginTop: 12 }}>
+                  <h4 style={{ margin: "8px 0" }}>{s.heading}</h4>
+                  <ul>
+                    {(s.bullets || []).map((b, i) => (
+                      <li key={i}>{b}</li>
+                    ))}
+                  </ul>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+
+            {!!(exp.approvedPhrases?.length) && (
+              <div style={{ marginTop: 18 }}>
+                <h3>🟢 Approved Phrases</h3>
+                <ul>
+                  {exp.approvedPhrases.map((p, i) => (
+                    <li key={i}>{p}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {!!(exp.commonMisses?.length) && (
+              <div style={{ marginTop: 18 }}>
+                <h3>🔴 Common Misses</h3>
+                <ul>
+                  {exp.commonMisses.map((m, i) => (
+                    <li key={i}>{m}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {!!(exp.sources?.length) && (
+              <div style={{ marginTop: 18 }}>
+                <h3>📌 Sources</h3>
+                <ul>
+                  {exp.sources.map((src, i) => (
+                    <li key={i}>{src}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
         )}
 
-        <div style={{ marginTop: 10 }} className="muted">
-          {allChecklistDone ? "✅ Checklist done" : "⬜ Finish checklist"} •{" "}
-          {allQuizAnswered ? "✅ Quiz answered" : "⬜ Answer all questions"}
+        {/* Quiz */}
+        <div style={{ marginTop: 22 }}>
+          <h3>🧠 Knowledge Check</h3>
+          <Quiz criterionId={id} />
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 12, marginTop: 18, alignItems: "center" }}>
+          <button className="btn" type="button" onClick={() => navigate(-1)}>
+            ← Back
+          </button>
+
+          <button className="primary-btn" type="button" onClick={handleMarkComplete}>
+            Mark Complete
+          </button>
+
+          {msg && <span className="muted">{msg}</span>}
         </div>
       </div>
     </div>
