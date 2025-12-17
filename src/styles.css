@@ -21,6 +21,10 @@ body {
   margin: 0 auto;
   padding: 1.5rem;
 }
+:root {
+  --hp-navy: #0b3a5b;
+  --hp-blue: #4fb0f5;
+}
 
 /* ===============================
    NAVBAR (FINAL)
@@ -31,9 +35,10 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: #0b1220;
+  background: linear-gradient(90deg, var(--hp-navy) 0%, var(--hp-blue) 100%);
   color: #fff;
 }
+
 
 .nav__inner {
   max-width: 1200px;
@@ -837,4 +842,8 @@ body {
 @media (max-width: 820px) {
   .videoWrap { max-width: 100%; }
   .videoFrame { height: 240px; }
+}
+/* download link should match nav links */
+.nav__desktop a.nav__link {
+  text-decoration: none;
 }

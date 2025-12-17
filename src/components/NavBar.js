@@ -1,13 +1,10 @@
-// src/components/NavBar.js
 import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
-const TRAINING_GUIDE_FILE_ID = "1VaNsJlLPtSqCXTvD_YDi1PwdnXzP2SAW";
-// Direct download link:
-const TRAINING_GUIDE_DOWNLOAD_URL = `https://drive.google.com/uc?export=download&id=${TRAINING_GUIDE_FILE_ID}`;
-// Optional "view" link (opens Drive viewer):
-const TRAINING_GUIDE_VIEW_URL = `https://drive.google.com/file/d/${TRAINING_GUIDE_FILE_ID}/view?usp=sharing`;
+/* ✅ Training Guide Download */
+const GUIDE_DOWNLOAD_URL =
+  "https://drive.google.com/uc?export=download&id=1VaNsJlLPtSqCXTvD_YDi1PwdnXzP2SAW";
 
 export default function NavBar() {
   const navigate = useNavigate();
@@ -51,15 +48,27 @@ export default function NavBar() {
   return (
     <header className="nav">
       <div className="nav__inner">
-        {/* LEFT: Brand */}
-        <button className="nav__brand" onClick={() => navigate("/")}>
-          HP 2026 Quality Excellence Portal
-        </button>
+        {/* Brand */}
+        <div
+          className="nav__brand"
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate("/")}
+          onKeyDown={(e) => e.key === "Enter" && navigate("/")}
+        >
+          <img
+            src="/qa-no-bg-logo.png"
+            alt="HotelPlanner QA"
+            className="nav__logo"
+          />
+          <span className="nav__title">
+            HP 2026 Quality Excellence Portal
+          </span>
+        </div>
 
-        {/* Push everything else to the RIGHT */}
         <div className="nav__spacer" />
 
-        {/* RIGHT: Desktop Links (ALL together) */}
+        {/* ================= DESKTOP NAV ================= */}
         <nav className="nav__desktop">
           <NavLink to="/" className={linkClass}>
             Home
@@ -73,14 +82,13 @@ export default function NavBar() {
             Training Guide
           </NavLink>
 
-          {/* ✅ Download button */}
+          {/* ✅ Download Guide */}
           <a
-            className="nav__btn nav__btn--primary"
-            href={TRAINING_GUIDE_DOWNLOAD_URL}
+            href={GUIDE_DOWNLOAD_URL}
+            className="nav__link"
             target="_blank"
             rel="noreferrer"
-            onClick={close}
-            title="Download Training Guide (PDF)"
+            title="Download Training Guide PDF"
           >
             Download Guide
           </a>
@@ -90,6 +98,7 @@ export default function NavBar() {
               <NavLink to="/login" className={linkClass}>
                 Login
               </NavLink>
+
               <NavLink to="/signup" className="nav__btn nav__btn--primary">
                 Sign up
               </NavLink>
@@ -106,18 +115,22 @@ export default function NavBar() {
                 </NavLink>
               )}
 
-              <button className="nav__btn" onClick={logout} type="button">
+              <button
+                type="button"
+                className="nav__btn"
+                onClick={logout}
+              >
                 Logout
               </button>
             </>
           )}
         </nav>
 
-        {/* Hamburger (mobile only) */}
+        {/* ================= MOBILE BURGER ================= */}
         <button
           className="nav__burger"
           type="button"
-          aria-label="Open menu"
+          aria-label="Toggle menu"
           aria-expanded={open ? "true" : "false"}
           onClick={() => setOpen((v) => !v)}
         >
@@ -127,26 +140,28 @@ export default function NavBar() {
         </button>
       </div>
 
-      {/* MOBILE MENU */}
+      {/* ================= MOBILE MENU ================= */}
       <div className={`nav__mobile ${open ? "nav__mobile--open" : ""}`}>
         <NavLink to="/" className={linkClass} onClick={close}>
           Home
         </NavLink>
+
         <NavLink to="/criteria" className={linkClass} onClick={close}>
           QA Criteria
         </NavLink>
+
         <NavLink to="/training-guide" className={linkClass} onClick={close}>
           Training Guide
         </NavLink>
 
-        {/* ✅ Mobile download button */}
+        {/* ✅ Download Guide (mobile) */}
         <a
-          className="nav__btn nav__btn--primary nav__btn--full"
-          href={TRAINING_GUIDE_DOWNLOAD_URL}
+          href={GUIDE_DOWNLOAD_URL}
+          className={linkClass({ isActive: false })}
+          onClick={close}
           target="_blank"
           rel="noreferrer"
-          onClick={close}
-          title="Download Training Guide (PDF)"
+          title="Download Training Guide PDF"
         >
           Download Guide
         </a>
@@ -158,6 +173,7 @@ export default function NavBar() {
             <NavLink to="/login" className={linkClass} onClick={close}>
               Login
             </NavLink>
+
             <NavLink
               to="/signup"
               className="nav__btn nav__btn--primary nav__btn--full"
@@ -168,35 +184,29 @@ export default function NavBar() {
           </>
         ) : (
           <>
-            <div className="nav__userMobile">Signed in as: {email}</div>
+            <div className="nav__userMobile">
+              Signed in as: {email}
+            </div>
 
             {isAdmin && (
-              <NavLink to="/admin-tools" className={linkClass} onClick={close}>
+              <NavLink
+                to="/admin-tools"
+                className={linkClass}
+                onClick={close}
+              >
                 Admin Tools
               </NavLink>
             )}
 
             <button
+              type="button"
               className="nav__btn nav__btn--full"
               onClick={logout}
-              type="button"
             >
               Logout
             </button>
           </>
         )}
-
-        {/* Optional: a "View in Drive" text link if you want */}
-        <a
-          className="nav__link"
-          href={TRAINING_GUIDE_VIEW_URL}
-          target="_blank"
-          rel="noreferrer"
-          onClick={close}
-          style={{ marginTop: 8 }}
-        >
-          View Guide in Drive
-        </a>
       </div>
     </header>
   );
