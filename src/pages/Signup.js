@@ -1,7 +1,6 @@
-// src/pages/Signup.js
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "../supabaseClient";
+import { supabase } from "../lib/supabaseClient";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -10,85 +9,118 @@ export default function Signup() {
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState(null);
-  const [ok, setOk] = useState(false);
+  const [error, setError] = useState("");
 
-  const onSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    setMsg(null);
-    setOk(false);
-    setLoading(true);
+    setError("");
 
+    const cleanEmail = String(email || "").trim();
+
+    if (!cleanEmail) return setError("Email is required.");
+    if (!password) return setError("Password is required.");
+    if (password.length < 6) return setError("Password must be at least 6 characters.");
+
+    setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
+        email: cleanEmail,
         password,
       });
 
       if (error) throw error;
 
-      // Depending on your Supabase settings, this may require email confirmation.
-      // If confirmation is OFF, you'll have a session and can go straight in.
-      const hasSession = !!data?.session;
-
-      if (hasSession) {
-        navigate("/criteria", { replace: true });
-      } else {
-        setOk(true);
-        setMsg("Account created. Please check your email to confirm, then login.");
-      }
+      // If email confirmations are ON in Supabase, user may need to confirm email
+      // We'll navigate them to login with a helpful message.
+      navigate("/login", {
+        state: {
+          notice:
+            data?.user && !data?.session
+              ? "Account created. Please check your email to confirm your account, then log in."
+              : "Account created. You can log in now.",
+        },
+      });
     } catch (err) {
-      setMsg(err?.message || "Signup failed.");
+      setError(err?.message || "Signup failed. Please try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1 style={{ margin: 0 }}>Sign up</h1>
-        <p className="muted" style={{ marginTop: 6 }}>
-          Create your portal account.
-        </p>
+        <h1 style={{ marginTop: 0 }}>Sign up</h1>
+        <p className="muted">Create your portal account.</p>
 
-        {msg && (
-          <div className={`alert ${ok ? "alert-ok" : "alert-warn"}`}>{msg}</div>
-        )}
+        {error ? (
+          <div
+            style={{
+              margin: "10px 0 12px",
+              padding: "10px 12px",
+              borderRadius: 12,
+              border: "1px solid #fecaca",
+              background: "#fef2f2",
+              color: "#991b1b",
+              fontWeight: 600,
+            }}
+          >
+            {error}
+          </div>
+        ) : null}
 
-        <form className="auth-form" onSubmit={onSubmit}>
+        {/* ✅ IMPORTANT: Button must be INSIDE the form */}
+        <form className="auth-form" onSubmit={handleSubmit}>
           <label>
-            <div className="muted" style={{ marginBottom: 6 }}>Email</div>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Email</div>
             <input
-              className="input"
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              type="email"
+              placeholder="name@company.com"
               autoComplete="email"
-              required
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid #d1d5db",
+                outline: "none",
+              }}
             />
           </label>
 
           <label>
-            <div className="muted" style={{ marginBottom: 6 }}>Password</div>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Password</div>
             <input
-              className="input"
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              type="password"
+              placeholder="Minimum 6 characters"
               autoComplete="new-password"
-              required
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid #d1d5db",
+                outline: "none",
+              }}
             />
           </label>
 
-          <button className="nav__btn nav__btn--primary" disabled={loading} type="submit">
+          {/* ✅ Visible submit button */}
+          <button
+            type="submit"
+            className="primary-btn"
+            disabled={loading}
+            style={{ width: "fit-content" }}
+          >
             {loading ? "Creating..." : "Create account"}
           </button>
-        </form>
 
-        <p className="muted" style={{ marginTop: 12 }}>
-          Already have an account? <Link to="/login">Login</Link>
-        </p>
+          <div className="muted" style={{ marginTop: 6 }}>
+            Already have an account? <Link to="/login">Login</Link>
+          </div>
+        </form>
       </div>
     </div>
   );
